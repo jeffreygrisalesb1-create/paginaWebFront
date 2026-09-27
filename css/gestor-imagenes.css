@@ -1,0 +1,233 @@
+.image-manager-page {
+    min-height: 100vh;
+    background: #17130f;
+    color: #fffaf2;
+}
+
+.image-manager-shell {
+    width: min(1100px, 92%);
+    margin: 0 auto;
+    padding: 3rem 0 5rem;
+}
+
+.image-manager-header,
+.image-manager-tools {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1.5rem;
+}
+
+.image-manager-header {
+    padding-bottom: 1.5rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.image-manager-kicker {
+    margin-bottom: .5rem;
+    color: #ff5050;
+    font-size: .72rem;
+    font-weight: 700;
+    letter-spacing: 1.5px;
+}
+
+.image-manager-header h1 {
+    font-family: 'Orbitron', sans-serif;
+    font-size: clamp(1.5rem, 3vw, 2.2rem);
+}
+
+.image-manager-back {
+    color: #fffaf2;
+    text-decoration: none;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    padding: .7rem 1rem;
+    border-radius: 4px;
+}
+
+.image-manager-back:hover {
+    border-color: #ff5050;
+    color: #ff7777;
+}
+
+.image-manager-tabs {
+    display: flex;
+    gap: .5rem;
+    padding-top: 1.5rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.image-manager-tabs button {
+    padding: .75rem 1rem;
+    color: #b8ab9a;
+    background: transparent;
+    border: 0;
+    border-bottom: 2px solid transparent;
+    cursor: pointer;
+}
+
+.image-manager-tabs button.active,
+.image-manager-tabs button:hover {
+    color: #fffaf2;
+    border-bottom-color: #ff5050;
+}
+
+.image-manager-tools {
+    flex-wrap: wrap;
+    justify-content: flex-start;
+    padding: 1.5rem 0;
+}
+
+.image-manager-tools label {
+    font-size: .85rem;
+    font-weight: 700;
+}
+
+.image-manager-tools input {
+    width: min(360px, 100%);
+    padding: .75rem .9rem;
+    color: #fffaf2;
+    background: #211b15;
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    border-radius: 4px;
+}
+
+.image-manager-tools p {
+    flex: 1 1 100%;
+    color: #b8ab9a;
+    font-size: .85rem;
+}
+
+.image-inventory-list {
+    display: grid;
+    gap: .8rem;
+}
+
+.image-inventory-row {
+    display: grid;
+    grid-template-columns: 160px minmax(0, 1fr);
+    gap: 1.1rem;
+    padding: .85rem;
+    background: #211b15;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 6px;
+}
+
+.image-inventory-row[hidden] {
+    display: none;
+}
+
+.image-inventory-preview {
+    display: grid;
+    min-height: 120px;
+    place-items: center;
+    overflow: hidden;
+    background: #100e0c;
+    border-radius: 3px;
+}
+
+.image-inventory-preview img {
+    width: 100%;
+    height: 100%;
+    min-height: 120px;
+    object-fit: cover;
+}
+
+.image-preview-empty {
+    color: #8f857a;
+    font-size: .8rem;
+}
+
+.image-inventory-info {
+    display: grid;
+    align-content: center;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: .45rem 1rem;
+    min-width: 0;
+}
+
+.image-inventory-info h2 {
+    overflow-wrap: anywhere;
+    font-size: 1rem;
+}
+
+.image-inventory-info p {
+    grid-column: 1 / -1;
+    color: #b8ab9a;
+    font-size: .78rem;
+}
+
+.image-inventory-info label {
+    grid-column: 1 / -1;
+    margin-top: .35rem;
+    font-size: .75rem;
+    font-weight: 700;
+}
+
+.image-inventory-info input {
+    min-width: 0;
+    width: 100%;
+    padding: .65rem .75rem;
+    color: #fffaf2;
+    background: #100e0c;
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    border-radius: 4px;
+}
+
+.image-inventory-info input:focus,
+.image-manager-tools input:focus {
+    outline: none;
+    border-color: #ff5050;
+}
+
+.image-save-state {
+    align-self: center;
+    min-width: 125px;
+    color: #b8ab9a;
+    font-size: .75rem;
+    text-align: right;
+}
+
+.image-manager-loading,
+.image-manager-error {
+    padding: 2rem 0;
+    color: #b8ab9a;
+}
+
+.image-manager-error {
+    color: #ff7777;
+}
+
+@media (max-width: 620px) {
+    .image-manager-shell {
+        width: min(100% - 1.5rem, 520px);
+        padding-top: 1.5rem;
+    }
+
+    .image-manager-header {
+        align-items: flex-start;
+    }
+
+    .image-manager-back {
+        flex: 0 0 auto;
+        font-size: .8rem;
+    }
+
+    .image-inventory-row {
+        grid-template-columns: 100px minmax(0, 1fr);
+        gap: .75rem;
+        padding: .65rem;
+    }
+
+    .image-inventory-preview,
+    .image-inventory-preview img {
+        min-height: 90px;
+    }
+
+    .image-inventory-info {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .image-save-state {
+        text-align: left;
+    }
+}

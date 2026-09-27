@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Imágenes del inventario | InemVentas</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <link rel="stylesheet" href="css/gestor-imagenes.css">
+</head>
+<body class="image-manager-page">
+    <main class="image-manager-shell">
+        <header class="image-manager-header">
+            <div>
+                <p class="image-manager-kicker">INVENTARIO · MULTIMEDIA</p>
+                <h1>Imágenes del inventario</h1>
+            </div>
+            <a class="image-manager-back" href="Pagina.inemVentas.html">Volver al catálogo</a>
+        </header>
+
+        <nav class="image-manager-tabs" aria-label="Tipo de inventario">
+            <button type="button" class="active" data-inventory-tab="vehiculos" aria-pressed="true">Vehículos</button>
+            <button type="button" data-inventory-tab="productos" aria-pressed="false">Accesorios, repuestos y limpieza</button>
+        </nav>
+
+        <section class="image-manager-tools" aria-label="Controles del inventario">
+            <label for="inventorySearch">Buscar en inventario</label>
+            <input id="inventorySearch" type="search" placeholder="Nombre, marca, categoría o placa">
+            <p id="imageManagerStatus" role="status" aria-live="polite">Conectando con el inventario...</p>
+        </section>
+
+        <section id="inventoryImageList" class="image-inventory-list" aria-label="Inventario">
+            <p class="image-manager-loading">Cargando inventario...</p>
+        </section>
+    </main>
+
+    <script src="js/api.js"></script>
+    <script src="js/gestor-imagenes.js?v=3"></script>
+</body>
+</html>

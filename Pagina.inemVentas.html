@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JULIANCHO | Concesionario InemVentas</title>
+    <!-- FontAwesome para íconos -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <!-- Chart.js para gráficos -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+
+    <!-- NAVBAR F]JA -->
+    <nav class="navbar">
+        <a href="#inicio" class="logo" onclick="showSection('cliente')">JULIANCHO</a>
+        <ul class="nav-links" id="navLinks">
+            <li><a href="#inicio" class="active" onclick="showSection('cliente')">Inicio</a></li>
+            <li><a href="#catalogo" onclick="showSection('cliente')">Catálogo</a></li>
+        </ul>
+        <button class="btn-admin-nav" id="authBtn" onclick="openLoginModal()"><i class="fa-solid fa-lock-open"></i> Acceso Personal</button>
+    </nav>
+
+    <!-- RUTA COMPONENTE CLIENTE -->
+    <div id="clientView">
+        <!-- HERO BANNER -->
+        <header class="hero" id="inicio">
+            <div class="hero-content">
+                <h1>Consecionario <span>Inemita</span></h1>
+                <p>Explora la colección automotriz más exclusiva y tecnológica del mercado global. Rendimiento puro, diseño sofisticado.</p>
+                <a href="#catalogo" class="btn-primary">Ver Inventario</a>
+            </div>
+        </header>
+
+        <!-- CONTENEDOR PRINCIPAL CATÁLOGO -->
+        <main class="main-container" id="catalogo">
+            <h2 class="section-title">Catálogo de Exclusividades</h2>
+            <p id="catalogStatus" role="status" style="color:var(--text-muted); margin:-1rem 0 1.5rem;">Conectando con el inventario...</p>
+            
+            <!-- BUSCADOR Y FILTROS -->
+            <div class="search-filter-wrapper">
+                <div class="search-box">
+                    <i class="fa-solid fa-magnifying-glass"></i>
+                    <input type="text" id="searchInput" placeholder="Buscar vehículos, repuestos o productos por nombre o marca..." oninput="filtrarCatalogo()">
+                </div>
+                <div class="filters-grid">
+                    <div class="filter-group">
+                        <label>Categoría</label>
+                        <select id="filterCategory" onchange="filtrarCatalogo()">
+                            <option value="todos">Todas las categorías</option>
+                            <option value="Vehículos">Vehículos</option>
+                            <option value="Productos">Productos de Cuidado</option>
+                            <option value="Repuestos">Repuestos Premium</option>
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <label>Marca</label>
+                        <select id="filterBrand" onchange="filtrarCatalogo()">
+                            <option value="todos">Todas las marcas</option>
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <label>Condición / tipo</label>
+                        <select id="filterStatus" onchange="filtrarCatalogo()">
+                            <option value="todos">Todos</option>
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <label>Precio Máximo</label>
+                        <select id="filterPrice" onchange="filtrarCatalogo()">
+                            <option value="todos">Cualquier precio</option>
+                            <option value="50000">Hasta $50,000</option>
+                            <option value="150000">Hasta $150,000</option>
+                            <option value="300000">Hasta $300,000</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <!-- GRILLA DINÁMICA DE TARJETAS -->
+            <div class="catalog-grid" id="catalogGrid">
+                <!-- Inyectado mediante JS -->
+            </div>
+        </main>
+    </div>
+
+    <!-- RUTA COMPONENTE PORTAL ADMINISTRADOR -->
+    <div id="adminView" class="admin-section main-container">
+        <div class="admin-header">
+            <div>
+                <h2 style="font-family:'Orbitron', sans-serif;">PANEL DE OPERACIONES DEL TRABAJADOR</h2>
+                <p style="color:var(--text-muted); font-size:0.9rem;">Gestión operativa de inventario y existencias</p>
+                <a class="admin-image-link" href="gestor-imagenes.html" target="_blank" rel="noopener">Gestionar imágenes de vehículos</a>
+            </div>
+            <button class="btn-primary" style="background:var(--danger); color:#fffaf2;" onclick="logout()">Cerrar Sesión</button>
+        </div>
+
+        <!-- TARJETAS ESTADÍSTICAS (KPIs) -->
+        <div class="dashboard-grid">
+            <div class="stat-card">
+                <div class="stat-info">
+                    <h3>Ventas del Mes</h3>
+                    <p id="kpiVentasCount">—</p>
+                </div>
+                <div class="stat-icon"><i class="fa-solid fa-cart-shopping"></i></div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-info">
+                    <h3>Ingresos Totales</h3>
+                    <p id="kpiIngresos">No reportados</p>
+                </div>
+                <div class="stat-icon" style="color: var(--success);"><i class="fa-solid fa-wallet"></i></div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-info">
+                    <h3>Eficiencia Operativa</h3>
+                    <div style="display:flex; align-items:center; gap:10px; margin-top:0.5rem;">
+                        <span class="semaforo verde" id="semaforoIndicador"></span>
+                        <span id="semaforoTexto" style="font-weight:600;">Métricas no disponibles</span>
+                    </div>
+                </div>
+                <div class="stat-icon"><i class="fa-solid fa-gauge-high"></i></div>
+            </div>
+        </div>
+
+        <!-- LAYOUT DE OPERACIONES -->
+        <div class="admin-layout-two-col">
+            <!-- GRÁFICO DE RENDIMIENTO -->
+            <div class="admin-block">
+                <h3>Inventario registrado en base de datos</h3>
+                <div style="position: relative; height:280px; width:100%;">
+                    <canvas id="salesChart"></canvas>
+                </div>
+            </div>
+
+            <!-- FORMULARIO DE INGRESO DE STOCK -->
+            <div class="admin-block">
+                <h3>Registrar Nuevo Elemento</h3>
+                <form id="newItemForm" onsubmit="agregarNuevoItem(event)">
+                    <div class="form-group">
+                        <label>Categoría Organizacional</label>
+                        <select id="formCategory" required onchange="actualizarFormularioCategoria()" style="width:100%; padding:0.8rem; background:#17130f; border:1px solid var(--border-card); color:#fffaf2;">
+                            <option value="Vehículos">Vehículo</option>
+                            <option value="Productos">Producto / accesorio</option>
+                            <option value="Repuestos">Repuesto</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Clasificación</label>
+                        <select id="formDbCategory" required style="width:100%; padding:0.8rem; background:#17130f; border:1px solid var(--border-card); color:#fffaf2;"></select>
+                    </div>
+                    <div class="form-group">
+                        <label>Nombre del Elemento</label>
+                        <input type="text" id="formName" required placeholder="Nombre del elemento">
+                    </div>
+                    <div class="form-row" style="display:grid; grid-template-columns: 1fr 1fr; gap:1rem;">
+                        <div class="form-group" id="formBrandGroup">
+                            <label>Marca</label>
+                            <input type="text" id="formBrand" placeholder="Marca">
+                        </div>
+                        <div class="form-group" id="formModelGroup">
+                            <label>Modelo</label>
+                            <input type="text" id="formModel" placeholder="Modelo">
+                        </div>
+                    </div>
+                    <div class="form-row" style="display:grid; grid-template-columns: 1fr 1fr; gap:1rem;">
+                        <div class="form-group" id="formPlateGroup">
+                            <label>Placa</label>
+                            <input type="text" id="formPlate" placeholder="Placa">
+                        </div>
+                        <div class="form-group" id="formColorGroup">
+                            <label>Color</label>
+                            <input type="text" id="formColor" placeholder="Color">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Precio</label>
+                        <input type="number" id="formPrice" min="0" step="0.01" required placeholder="Precio">
+                    </div>
+                    <div class="form-group" id="formStockGroup">
+                        <label>Cantidad</label>
+                        <input type="number" id="formStock" min="0" step="1" placeholder="Cantidad disponible">
+                    </div>
+                    <button type="submit" class="btn-submit">Ingresar al Inventario</button>
+                </form>
+            </div>
+        </div>
+
+        <!-- TABLA COMPLETA DE GESTIÓN DE STOCK -->
+        <div class="admin-block">
+            <h3>Control Operativo de Inventario</h3>
+            <div class="table-responsive">
+                <table class="modern-table">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Elemento</th>
+                            <th>Categoría</th>
+                            <th>Marca</th>
+                            <th>Precio</th>
+                            <th>Stock</th>
+                            <th>Alertas</th>
+                        </tr>
+                    </thead>
+                    <tbody id="inventoryTableBody">
+                        <!-- Inyectado mediante JS -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- RUTA COMPONENTE GERENCIA GENERAL -->
+    <section id="managerView" class="manager-section">
+        <div class="manager-container">
+            <header class="manager-header">
+                <div>
+                    <h2>Panel de Dirección General</h2>
+                    <p>Métricas de negocio, capital y rendimiento de personal</p>
+                </div>
+                <button class="manager-logout" onclick="logout()">Cerrar Sesión</button>
+            </header>
+
+            <div class="manager-kpis">
+                <div class="manager-kpi">
+                    <div>
+                        <small>Valor de inventario vehicular</small>
+                                <strong id="managerCapital">—</strong>
+                    </div>
+                    <div class="manager-kpi-icon"><i class="fa-solid fa-money-bill-transfer"></i></div>
+                </div>
+                <div class="manager-kpi">
+                    <div>
+                        <small>Stock total automotores</small>
+                        <strong id="managerVehicles">0 Unidades</strong>
+                    </div>
+                    <div class="manager-kpi-icon"><i class="fa-solid fa-car-side"></i></div>
+                </div>
+                <div class="manager-kpi">
+                    <div>
+                        <small>Referencias de productos</small>
+                        <strong id="managerParts">0 Unidades</strong>
+                    </div>
+                    <div class="manager-kpi-icon"><i class="fa-solid fa-boxes-stacked"></i></div>
+                </div>
+            </div>
+
+            <div class="manager-panel">
+                <div class="manager-panel-title">
+                    <h3>Ventas e ingresos estimados por empleado</h3>
+                    <span>Precios actuales, no históricos</span>
+                </div>
+                <p id="managerSalesNote" class="manager-sales-note">Calculando artículos asociados...</p>
+                <div class="manager-table-wrap">
+                    <table class="manager-table">
+                        <thead>
+                            <tr>
+                                <th>Ranking</th>
+                                <th>ID Empleado</th>
+                                <th>Nombre del empleado</th>
+                                <th>Compras</th>
+                                <th>Artículos</th>
+                                <th>Ingreso estimado</th>
+                            </tr>
+                        </thead>
+                        <tbody id="managerEmployeesBody"><tr><td colspan="6">Cargando ventas...</td></tr></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="manager-panel">
+                <div class="manager-panel-title">
+                    <h3>Desglose de Inventario por Categoría</h3>
+                </div>
+                <div class="manager-chart-box">
+                    <canvas id="managerInventoryChart"></canvas>
+                </div>
+                <div class="manager-legend">
+                                <span><i class="veh"></i>Vehículos</span>
+                                <span><i class="prod"></i>Productos</span>
+                                <span><i class="rep"></i>Repuestos</span>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- MODAL DE ACCESO DEL PERSONAL -->
+    <div class="modal" id="loginModal">
+        <div class="login-card">
+            <button class="close-modal" onclick="closeLoginModal()"><i class="fa-solid fa-xmark"></i></button>
+            <h2>ACCESO PERSONAL</h2>
+            <form onsubmit="validarAcceso(event)">
+                <div class="form-group">
+                    <label><i class="fa-solid fa-user-tie"></i> Tipo de acceso</label>
+                    <select id="accessRole" required onchange="cambiarTipoAcceso()" style="width:100%; padding:0.8rem 1rem; background:rgba(40,30,20,.55); border:1px solid var(--border-card); border-radius:4px; color:#fffaf2;">
+                        <option value="trabajador">Trabajador</option>
+                        <option value="gerente">Gerente</option>
+                    </select>
+                </div>
+                <div class="form-group" id="staffNameGroup">
+                    <label for="staffName"><i class="fa-solid fa-user"></i> Nombre registrado</label>
+                    <input type="text" id="staffName" autocomplete="name" placeholder="Nombre completo">
+                </div>
+                <div class="form-group" id="staffDniGroup">
+                    <label for="staffDni"><i class="fa-solid fa-id-card"></i> DNI</label>
+                    <input type="text" id="staffDni" autocomplete="off" placeholder="DNI registrado">
+                </div>
+                <div class="form-group" id="staffCodeGroup" hidden>
+                    <label><i class="fa-solid fa-id-badge"></i> Código de acceso</label>
+                    <input type="text" id="staffCode" placeholder="Ingrese su código">
+                </div>
+                <div class="form-group" id="staffPassGroup" hidden>
+                    <label><i class="fa-solid fa-key"></i> Contraseña</label>
+                    <input type="password" id="staffPass" placeholder="••••••••">
+                </div>
+                <button type="submit" class="btn-submit">Ingresar al sistema</button>
+                <p style="margin-top:1rem;color:var(--text-muted);font-size:.72rem;text-align:center;line-height:1.5;">
+                    Para trabajadores, usa el nombre y DNI registrados en la base.<br>
+                    Acceso de gerente de demostración: <strong>GERENTE / 5678</strong>
+                </p>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL DE DETALLES DEL VEHÍCULO -->
+    <div class="modal" id="vehicleDetailModal">
+        <div id="vehicleDetailBody" class="vehicle-detail-card"></div>
+    </div>
+
+    <!-- LÓGICA DE NEGOCIO Y SCRIPTING -->
+    <script src="js/api.js"></script>
+    <script src="js/app.js?v=2"></script>
+    <script src="js/auth.js"></script>
+</body>
+</html>

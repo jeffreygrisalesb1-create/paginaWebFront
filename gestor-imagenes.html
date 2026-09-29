@@ -25,7 +25,9 @@
         <section class="image-manager-tools" aria-label="Controles del inventario">
             <label for="inventorySearch">Buscar en inventario</label>
             <input id="inventorySearch" type="search" placeholder="Nombre, marca, categoría o placa">
+            <button id="exportImageMap" class="image-manager-export" type="button">Exportar enlaces para Git</button>
             <p id="imageManagerStatus" role="status" aria-live="polite">Conectando con el inventario...</p>
+            <p class="image-manager-sharing">Para compartir cambios: reemplaza <strong>data/imagenes.json</strong> con el archivo exportado y súbelo al repositorio.</p>
         </section>
 
         <section id="inventoryImageList" class="image-inventory-list" aria-label="Inventario">
@@ -34,6 +36,7 @@
     </main>
 
     <script src="js/api.js"></script>
-    <script src="js/gestor-imagenes.js?v=3"></script>
+    <script src="js/image-store.js"></script>
+    <script src="js/gestor-imagenes.js?v=4"></script>
 </body>
 </html>

@@ -32,9 +32,10 @@ const diagnosticosSimulados = {
 };
 
 // Inicialización al cargar el DOM
-document.addEventListener("DOMContentLoaded", () => {
-    imagenesVehiculos = leerMapaImagenes(CLAVE_IMAGENES_VEHICULOS);
-    imagenesProductos = leerMapaImagenes(CLAVE_IMAGENES_PRODUCTOS);
+document.addEventListener("DOMContentLoaded", async () => {
+    const imagenesCompartidas = await cargarImagenesCompartidas();
+    imagenesVehiculos = { ...imagenesCompartidas.vehiculos, ...leerMapaImagenes(CLAVE_IMAGENES_VEHICULOS) };
+    imagenesProductos = { ...imagenesCompartidas.productos, ...leerMapaImagenes(CLAVE_IMAGENES_PRODUCTOS) };
     cargarDatosReales();
 });
 

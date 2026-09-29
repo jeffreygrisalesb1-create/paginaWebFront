@@ -19,6 +19,7 @@ listaInventario.addEventListener('change', guardarImagen);
 document.querySelectorAll('[data-inventory-tab]').forEach(boton => {
     boton.addEventListener('click', () => cambiarInventario(boton.dataset.inventoryTab));
 });
+document.getElementById('exportImageMap').addEventListener('click', exportarMapaImagenes);
 document.addEventListener('DOMContentLoaded', cargarInventario);
 
 function leerMapaImagenes(clave) {
@@ -59,14 +60,19 @@ function validarUrlImagen(valor) {
 
 async function cargarInventario() {
     try {
-        const [vehiculos, productos, categorias] = await Promise.all([
+        const [vehiculos, productos, categorias, imagenesCompartidas] = await Promise.all([
             solicitarAPI('vehiculos'),
             solicitarAPI('productos'),
-            solicitarAPI('categoriaProductos')
+            solicitarAPI('categoriaProductos'),
+            cargarImagenesCompartidas()
         ]);
         if (!Array.isArray(vehiculos) || !Array.isArray(productos) || !Array.isArray(categorias)) {
             throw new Error('La API no devolvió todos los datos del inventario.');
         }
+        imagenesPorTipo = {
+            vehiculos: { ...imagenesCompartidas.vehiculos, ...imagenesPorTipo.vehiculos },
+            productos: { ...imagenesCompartidas.productos, ...imagenesPorTipo.productos }
+        };
         inventarioPorTipo = { vehiculos, productos };
         categoriasProductosGestor = categorias;
         renderizarInventario();
@@ -207,4 +213,14 @@ function guardarImagen(evento) {
         estado.textContent = 'No se pudo guardar';
         estadoGestorImagenes.textContent = 'El navegador no permite guardar imágenes en este origen.';
     }
+}
+
+function exportarMapaImagenes() {
+    const archivo = new Blob([`${JSON.stringify(imagenesPorTipo, null, 2)}\n`], { type: 'application/json' });
+    const enlace = document.createElement('a');
+    enlace.href = URL.createObjectURL(archivo);
+    enlace.download = 'imagenes.json';
+    enlace.click();
+    URL.revokeObjectURL(enlace.href);
+    estadoGestorImagenes.textContent = 'Archivo exportado. Reemplaza data/imagenes.json y sube ese cambio al repositorio.';
 }

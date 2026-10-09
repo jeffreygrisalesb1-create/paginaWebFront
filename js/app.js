@@ -4,10 +4,17 @@ let categoriasProductos = [];
 let comprasRegistradas = [];
 let empleadosRegistrados = [];
 let empleadosDisponibles = false;
+let clientesRegistrados = [];
+let paisesRegistrados = [];
+let ciudadesRegistradas = [];
+let transportadorasRegistradas = [];
+let enviosRegistrados = [];
+let empleadoActivo = null;
 let detallesProductosCompra = [];
 let detallesVehiculosCompra = [];
 let chartInstancia = null;
 let managerChartInstancia = null;
+let managerTopVehiclesChartInstancia = null;
 const CLAVE_IMAGENES_VEHICULOS = 'inemVentas.vehicleImages.v1';
 const CLAVE_IMAGENES_PRODUCTOS = 'inemVentas.productImages.v1';
 let imagenesVehiculos = {};
@@ -170,17 +177,27 @@ async function cargarDatosReales() {
             ...(Array.isArray(vehiculos) ? vehiculos.map(mapearVehiculo) : []),
             ...(Array.isArray(productos) ? productos.map(mapearProducto) : [])
         ];
-        const [respuestaCompras, respuestaEmpleados, respuestaDetallesProductos, respuestaDetallesVehiculos] = await Promise.all([
+        const [respuestaCompras, respuestaEmpleados, respuestaDetallesProductos, respuestaDetallesVehiculos, respuestaClientes, respuestaPaises, respuestaCiudades, respuestaTransportadoras, respuestaEnvios] = await Promise.all([
             solicitarAPI('compras').catch(error => { console.error('No fue posible cargar las compras:', error); return []; }),
             solicitarAPI('empleados').catch(error => { console.error('No fue posible cargar los empleados:', error); return null; }),
             solicitarAPI('cp').catch(error => { console.error('No fue posible cargar los detalles de productos:', error); return []; }),
-            solicitarAPI('cv').catch(error => { console.error('No fue posible cargar los detalles de vehículos:', error); return []; })
+            solicitarAPI('cv').catch(error => { console.error('No fue posible cargar los detalles de vehículos:', error); return []; }),
+            solicitarAPI('clientes').catch(error => { console.error('No fue posible cargar los clientes:', error); return []; }),
+            solicitarAPI('paises').catch(error => { console.error('No fue posible cargar los países:', error); return []; }),
+            solicitarAPI('ciudades').catch(error => { console.error('No fue posible cargar las ciudades:', error); return []; }),
+            solicitarAPI('transportadoras').catch(error => { console.error('No fue posible cargar las transportadoras:', error); return []; }),
+            solicitarAPI('envios').catch(error => { console.error('No fue posible cargar los envíos:', error); return []; })
         ]);
         comprasRegistradas = Array.isArray(respuestaCompras) ? respuestaCompras : [];
         empleadosDisponibles = Array.isArray(respuestaEmpleados);
         empleadosRegistrados = empleadosDisponibles ? respuestaEmpleados : [];
         detallesProductosCompra = Array.isArray(respuestaDetallesProductos) ? respuestaDetallesProductos : [];
         detallesVehiculosCompra = Array.isArray(respuestaDetallesVehiculos) ? respuestaDetallesVehiculos : [];
+        clientesRegistrados = Array.isArray(respuestaClientes) ? respuestaClientes : [];
+        paisesRegistrados = Array.isArray(respuestaPaises) ? respuestaPaises : [];
+        ciudadesRegistradas = Array.isArray(respuestaCiudades) ? respuestaCiudades : [];
+        transportadorasRegistradas = Array.isArray(respuestaTransportadoras) ? respuestaTransportadoras : [];
+        enviosRegistrados = Array.isArray(respuestaEnvios) ? respuestaEnvios : [];
         renderizarCatalogo(baseDeDatos);
         actualizarSelectMarcas();
         actualizarFiltroCategorias();
@@ -189,6 +206,7 @@ async function cargarDatosReales() {
         actualizarKpis();
         actualizarGrafico();
         actualizarPanelGerente();
+        renderizarComprasPendientes();
         estado.textContent = `Inventario sincronizado con la base de datos: ${baseDeDatos.length} registros.`;
     } catch (error) {
         console.error('No fue posible cargar el inventario desde la API:', error);
@@ -214,6 +232,7 @@ function showSection(contexto) {
         inicializarGrafico();
         renderizarTablaInventario();
         actualizarKpis();
+        renderizarComprasPendientes();
     } else if (contexto === 'gerente') {
         actualizarPanelGerente();
         managerView.classList.add('active');
@@ -301,6 +320,7 @@ function actualizarPanelGerente() {
     }
 
     inicializarGraficoGerente();
+    inicializarGraficoVehiculosMasVendidos();
 }
 
 function inicializarGraficoGerente() {
@@ -331,6 +351,69 @@ function inicializarGraficoGerente() {
             plugins: {
                 legend: { display: false },
                 tooltip: { callbacks: { label: ctx => ` ${ctx.label}: ${ctx.raw} referencias` } }
+            }
+        }
+    });
+}
+
+function inicializarGraficoVehiculosMasVendidos() {
+    const canvas = document.getElementById('managerTopVehiclesChart');
+    const note = document.getElementById('managerTopVehiclesNote');
+    if (!canvas || !note) return;
+
+    const comprasConfirmadas = new Set(comprasRegistradas
+        .filter(compra => {
+            const empleadoId = leerCampo(compra, 'Empleado_id');
+            return empleadoId !== null && empleadoId !== '' && Number(empleadoId) !== 0;
+        })
+        .map(compra => String(leerCampo(compra, 'Compra_id'))));
+    const unidadesPorVehiculo = new Map();
+    detallesVehiculosCompra.forEach(detalle => {
+        if (!comprasConfirmadas.has(String(leerCampo(detalle, 'Compra_id')))) return;
+        const vehiculoId = String(leerCampo(detalle, 'Vehiculo_id'));
+        const cantidad = Math.max(1, Number(leerCampo(detalle, 'Cantidad')) || 1);
+        unidadesPorVehiculo.set(vehiculoId, (unidadesPorVehiculo.get(vehiculoId) || 0) + cantidad);
+    });
+
+    const vehiculosPorId = new Map(baseDeDatos
+        .filter(item => item.category === 'Vehículos')
+        .map(item => [String(item.dbId), item]));
+    const ranking = [...unidadesPorVehiculo.entries()]
+        .map(([id, unidades]) => ({ vehiculo: vehiculosPorId.get(id), unidades }))
+        .filter(venta => venta.vehiculo)
+        .sort((a, b) => b.unidades - a.unidades || a.vehiculo.name.localeCompare(b.vehiculo.name, 'es'))
+        .slice(0, 5);
+
+    if (managerTopVehiclesChartInstancia) managerTopVehiclesChartInstancia.destroy();
+    if (!ranking.length) {
+        note.textContent = 'Aún no hay ventas de vehículos confirmadas.';
+        return;
+    }
+
+    note.textContent = `Top ${ranking.length} según unidades vendidas.`;
+    managerTopVehiclesChartInstancia = new Chart(canvas.getContext('2d'), {
+        type: 'bar',
+        data: {
+            labels: ranking.map(venta => venta.vehiculo.name),
+            datasets: [{
+                label: 'Unidades vendidas',
+                data: ranking.map(venta => venta.unidades),
+                backgroundColor: ['#ff3151', '#00d9a6', '#f2c14e', '#55a7ff', '#ff8b42'],
+                borderRadius: 3,
+                maxBarThickness: 30
+            }]
+        },
+        options: {
+            indexAxis: 'y',
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { display: false },
+                tooltip: { callbacks: { label: context => ` ${context.raw} unidades` } }
+            },
+            scales: {
+                x: { beginAtZero: true, ticks: { color: '#9acbdc', precision: 0 }, grid: { color: 'rgba(0,217,255,.12)' } },
+                y: { ticks: { color: '#e8faff' }, grid: { display: false } }
             }
         }
     });
@@ -367,12 +450,119 @@ function renderizarCatalogo(items) {
                     <span class="card-brand">${item.brand ? `Marca: <strong>${esc(item.brand)}</strong> · ` : ''}${item.model ? `Modelo: <strong>${esc(item.model)}</strong> · ` : ''}${esc(etiquetaStock)}</span>
                     <div class="card-footer">
                         <span class="card-price">$${Number(item.price).toLocaleString('es-CO')}</span>
-                        <button class="btn-detail" onclick="abrirDetalle('${esc(item.id)}')">Ver detalles</button>
+                        <div class="card-actions">
+                            <button class="btn-detail" onclick="abrirDetalle('${esc(item.id)}')">Ver detalles</button>
+                            <a class="btn-buy" href="compra.html?item=${encodeURIComponent(item.id)}" ${item.stock === 0 ? 'aria-disabled="true" tabindex="-1"' : ''}>COMPRAR</a>
+                        </div>
                     </div>
                 </div>
             </div>
         `;
     });
+}
+
+function renderizarComprasPendientes() {
+    const tbody = document.getElementById('pendingPurchasesBody');
+    if (!tbody) return;
+    const pendientes = comprasRegistradas.filter(compra => {
+        const empleadoId = leerCampo(compra, 'Empleado_id');
+        return empleadoId === null || empleadoId === '' || Number(empleadoId) === 0;
+    });
+    if (!pendientes.length) {
+        tbody.innerHTML = '<tr><td colspan="8">No hay pedidos pendientes.</td></tr>';
+        return;
+    }
+
+    const itemsPorId = new Map(baseDeDatos.map(item => [String(item.dbId), item]));
+    tbody.innerHTML = pendientes.map(compra => {
+        const compraId = leerCampo(compra, 'Compra_id');
+        const lineas = [
+            ...detallesProductosCompra.filter(detalle => String(leerCampo(detalle, 'Compra_id')) === String(compraId)).map(detalle => itemsPorId.get(String(leerCampo(detalle, 'Producto_id')))),
+            ...detallesVehiculosCompra.filter(detalle => String(leerCampo(detalle, 'Compra_id')) === String(compraId)).map(detalle => itemsPorId.get(String(leerCampo(detalle, 'Vehiculo_id'))))
+        ].filter(Boolean);
+        const cliente = clientesRegistrados.find(item => String(leerCampo(item, 'Cliente_id')) === String(leerCampo(compra, 'Cliente_id')));
+        const envio = enviosRegistrados.find(item => String(leerCampo(item, 'Compra_id')) === String(compraId));
+        const ciudad = ciudadesRegistradas.find(item => String(leerCampo(item, 'Ciudad_id')) === String(leerCampo(envio, 'CiudadD_id')));
+        const transporteId = leerCampo(envio, 'Transporte_id');
+        const total = lineas.reduce((sum, item) => sum + Number(item.price || 0), 0);
+        return `
+            <tr>
+                <td>#${esc(compraId)}</td>
+                <td>${esc(leerCampo(cliente, 'nombre') || `Cliente #${leerCampo(compra, 'Cliente_id') || '—'}`)}</td>
+                <td>${lineas.length ? lineas.map(item => esc(item.name)).join(', ') : 'Detalle no disponible'}</td>
+                <td>$${total.toLocaleString('es-CO')}</td>
+                <td>
+                    <select class="order-carrier-select" id="orderCarrier-${esc(compraId)}" aria-label="Transportadora del pedido ${esc(compraId)}" ${empleadoActivo ? '' : 'disabled'}>
+                        <option value="">Selecciona transportadora</option>
+                        ${transportadorasRegistradas.map(transportadora => {
+                            const id = leerCampo(transportadora, 'Transporte_id');
+                            const selected = String(id) === String(transporteId) ? 'selected' : '';
+                            return `<option value="${esc(id)}" ${selected}>${esc(leerCampo(transportadora, 'nombre'))}</option>`;
+                        }).join('')}
+                    </select>
+                </td>
+                <td><input class="order-description-input" id="orderDescription-${esc(compraId)}" type="text" maxlength="255" value="${esc(leerCampo(envio, 'Descripcion') || '')}" placeholder="Tu pedido llega en 15 días" aria-label="Descripción del pedido ${esc(compraId)}" ${empleadoActivo ? '' : 'disabled'}></td>
+                <td>${esc(leerCampo(ciudad, 'nombre') || 'No informado')}</td>
+                <td><button class="btn-confirm-order" onclick="confirmarCompra('${esc(compraId)}')" ${empleadoActivo ? '' : 'disabled'}>Confirmar</button></td>
+            </tr>
+        `;
+    }).join('');
+}
+
+async function confirmarCompra(compraId) {
+    if (!empleadoActivo) {
+        alert('Inicia sesión como trabajador para confirmar un pedido.');
+        return;
+    }
+    const compra = comprasRegistradas.find(item => String(leerCampo(item, 'Compra_id')) === String(compraId));
+    if (!compra || leerCampo(compra, 'Empleado_id')) return;
+    const envio = enviosRegistrados.find(item => String(leerCampo(item, 'Compra_id')) === String(compraId));
+    const envioId = leerCampo(envio, 'Envio_id');
+    const transporteId = Number(document.getElementById(`orderCarrier-${compraId}`)?.value);
+    const descripcion = document.getElementById(`orderDescription-${compraId}`)?.value.trim();
+    if (!envioId) {
+        alert('El pedido no tiene un envío asociado. No se puede confirmar.');
+        return;
+    }
+    if (!transporteId || !descripcion) {
+        alert('Selecciona una transportadora y escribe una descripción breve para el cliente.');
+        return;
+    }
+    try {
+        await solicitarAPI(`envios/${encodeURIComponent(envioId)}`, {
+            method: 'PUT',
+            body: JSON.stringify({
+                CiudadO_id: leerCampo(envio, 'CiudadO_id'),
+                CiudadD_id: leerCampo(envio, 'CiudadD_id'),
+                Transporte_id: transporteId,
+                FechaE: String(leerCampo(envio, 'FechaE') || '').slice(0, 10),
+                FechaL: leerCampo(envio, 'FechaL') ? String(leerCampo(envio, 'FechaL')).slice(0, 10) : null,
+                Direccion: leerCampo(envio, 'Direccion'),
+                Compra_id: compraId,
+                Descripcion: descripcion
+            })
+        });
+        enviosRegistrados = enviosRegistrados.map(item => String(leerCampo(item, 'Envio_id')) === String(envioId)
+            ? { ...item, Transporte_id: transporteId, Descripcion: descripcion }
+            : item);
+        await solicitarAPI(`compras/${encodeURIComponent(compraId)}`, {
+            method: 'PUT',
+            body: JSON.stringify({
+                fecha: String(leerCampo(compra, 'fecha') || '').slice(0, 10),
+                Cliente_id: leerCampo(compra, 'Cliente_id'),
+                Empleado_id: leerCampo(empleadoActivo, 'Empleado_id')
+            })
+        });
+        comprasRegistradas = comprasRegistradas.map(item => String(leerCampo(item, 'Compra_id')) === String(compraId)
+            ? { ...item, Empleado_id: leerCampo(empleadoActivo, 'Empleado_id') }
+            : item);
+        renderizarComprasPendientes();
+        actualizarPanelGerente();
+        actualizarKpis();
+        alert(`Pedido #${compraId} confirmado.`);
+    } catch (error) {
+        alert(`No fue posible confirmar el pedido: ${error.message}`);
+    }
 }
 
 function esc(text) {

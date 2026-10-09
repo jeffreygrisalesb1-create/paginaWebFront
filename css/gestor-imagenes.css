@@ -23,6 +23,21 @@
     border-bottom: 1px solid rgba(255, 255, 255, 0.12);
 }
 
+.image-manager-brand {
+    display:flex;
+    align-items:center;
+    gap:1rem;
+}
+
+.image-manager-logo {
+    display:block;
+    width:132px;
+    height:72px;
+    flex:0 0 auto;
+    border-radius:4px;
+    object-fit:contain;
+}
+
 .image-manager-kicker {
     margin-bottom: .5rem;
     color: #ff5050;

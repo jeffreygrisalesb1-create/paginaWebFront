@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#07182f">
+    <title>Formularios de administración | Inem Motors</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap');
+        :root { color-scheme:dark; --bg:#07111c; --surface:#0e2030; --line:#214254; --text:#ecf7f8; --muted:#99b2bd; --red:#ff4965; --mint:#54e0bd; --gold:#f2c14e; }
+        * { box-sizing:border-box; }
+        body { min-height:100vh; margin:0; color:var(--text); background:radial-gradient(ellipse at 80% 0%, #153948 0, transparent 36%), var(--bg); font-family:'DM Sans',sans-serif; }
+        .topbar { min-height:68px; padding:0 max(5vw,calc((100vw - 1180px)/2)); display:flex; justify-content:space-between; align-items:center; gap:1rem; border-bottom:1px solid var(--line); background:#07111ce8; }
+        .brand,.back { display:inline-flex; align-items:center; gap:.6rem; color:var(--text); text-decoration:none; }
+        .brand { font:700 .88rem 'Space Grotesk',sans-serif; }
+        .brand img { display:block; width:145px; height:79px; object-fit:contain; }
+        .back { color:var(--muted); font-size:.8rem; }
+        main { width:min(1180px,90%); margin:auto; padding:2.5rem 0 5rem; }
+        .intro { margin-bottom:1rem; }
+        .eyebrow { color:var(--mint); font-size:.68rem; font-weight:700; letter-spacing:.12em; }
+        h1 { margin:.5rem 0 .6rem; font:700 clamp(2rem,5vw,3rem)/1.05 'Space Grotesk',sans-serif; }
+        .intro p { margin:0; color:var(--muted); }
+        .form-viewer { overflow:hidden; margin-bottom:1.5rem; border:1px solid var(--line); border-radius:4px; background:#0e2030; }
+        .form-viewer[hidden] { display:none; }
+        .form-viewer-toolbar { padding:.75rem 1rem; border-bottom:1px solid var(--line); }
+        .form-return { min-height:38px; padding:.5rem .8rem; border:1px solid var(--line); border-radius:3px; background:#173044; color:var(--text); font:600 .78rem 'DM Sans',sans-serif; cursor:pointer; }
+        .form-return:hover { border-color:var(--mint); color:var(--mint); }
+        .form-viewer iframe { display:block; width:100%; height:min(78vh,900px); min-height:620px; border:0; background:#07111c; }
+        .group { margin-top:1.2rem; }
+        .group-heading { display:flex; align-items:center; gap:.65rem; margin-bottom:.85rem; }
+        .group-heading i { color:var(--gold); }
+        .group-heading h2 { margin:0; font:600 1rem 'Space Grotesk',sans-serif; }
+        .form-grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:.7rem; }
+        .form-link { min-height:70px; display:flex; align-items:center; justify-content:space-between; gap:1rem; padding:.9rem 1rem; border:1px solid var(--line); border-radius:4px; background:linear-gradient(120deg,#0e2030,#102633); color:var(--text); text-decoration:none; transition:transform .16s,border-color .16s,background .16s; }
+        .form-link:hover { transform:translateY(-2px); border-color:var(--mint); background:#123142; }
+        .form-link span { display:flex; align-items:center; gap:.75rem; font-size:.84rem; font-weight:600; }
+        .form-link span i { width:18px; color:var(--mint); text-align:center; }
+        .form-link > i { color:var(--muted); font-size:.76rem; }
+        .form-link[hidden], .group[hidden] { display:none; }
+        .visually-hidden { position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; border:0; }
+        @media(max-width:760px) { main { padding-top:1.8rem; } .form-grid { grid-template-columns:repeat(2,minmax(0,1fr)); } }
+        @media(max-width:600px) { .form-viewer iframe { height:75vh; min-height:560px; } }
+        @media(max-width:500px) { .topbar { padding:0 5%; } .form-grid { grid-template-columns:1fr; } }
+    </style>
+</head>
+<body>
+    <header class="topbar">
+        <a class="brand" href="Pagina.inemVentas.html" aria-label="Inem Motors"><img src="http://localhost:3000/branding/inem-motors-logo.png" alt="Inem Motors"></a>
+        <a class="back" href="Pagina.inemVentas.html"><i class="fa-solid fa-arrow-left" aria-hidden="true"></i> Volver a gerencia</a>
+    </header>
+    <main>
+        <div class="intro">
+            <span class="eyebrow">DIRECCIÓN GENERAL</span>
+            <h1>Formularios de administración</h1>
+            <p>Selecciona el módulo que quieres abrir.</p>
+        </div>
+
+        <p id="formFilterStatus" class="visually-hidden" role="status" aria-live="polite">13 formularios disponibles</p>
+
+        <section class="form-viewer" id="formViewer" aria-label="Formulario seleccionado" hidden>
+            <div class="form-viewer-toolbar">
+                <button class="form-return" id="returnToList" type="button"><i class="fa-solid fa-arrow-left" aria-hidden="true"></i> Volver al listado</button>
+            </div>
+            <iframe id="selectedFormFrame" title="Formulario seleccionado" src="about:blank"></iframe>
+        </section>
+
+        <section class="group" aria-labelledby="catalogHeading">
+            <div class="group-heading"><i class="fa-solid fa-boxes-stacked" aria-hidden="true"></i><h2 id="catalogHeading">Catálogo</h2></div>
+            <div class="form-grid">
+                <a class="form-link" href="http://localhost:3000/formularios/form-productos.html"><span><i class="fa-solid fa-box"></i>Productos</span><i class="fa-solid fa-arrow-up-right-from-square"></i></a>
+                <a class="form-link" href="http://localhost:3000/formularios/form-vehiculos.html"><span><i class="fa-solid fa-car-side"></i>Vehículos</span><i class="fa-solid fa-arrow-up-right-from-square"></i></a>
+                <a class="form-link" href="http://localhost:3000/formularios/form-categorias.html"><span><i class="fa-solid fa-tags"></i>Categorías de vehículos</span><i class="fa-solid fa-arrow-up-right-from-square"></i></a>
+                <a class="form-link" href="http://localhost:3000/formularios/form-categoria-producto.html"><span><i class="fa-solid fa-layer-group"></i>Categorías de productos</span><i class="fa-solid fa-arrow-up-right-from-square"></i></a>
+                <a class="form-link" href="http://localhost:3000/formularios/form-transportadoras.html"><span><i class="fa-solid fa-truck-fast"></i>Transportadoras</span><i class="fa-solid fa-arrow-up-right-from-square"></i></a>
+            </div>
+        </section>
+
+        <section class="group" aria-labelledby="operationsHeading">
+            <div class="group-heading"><i class="fa-solid fa-arrows-rotate" aria-hidden="true"></i><h2 id="operationsHeading">Operaciones</h2></div>
+            <div class="form-grid">
+                <a class="form-link" href="http://localhost:3000/formularios/form-compras.html"><span><i class="fa-solid fa-cart-shopping"></i>Compras</span><i class="fa-solid fa-arrow-up-right-from-square"></i></a>
+                <a class="form-link" href="http://localhost:3000/formularios/form-cp.html"><span><i class="fa-solid fa-link"></i>Detalle compra-producto</span><i class="fa-solid fa-arrow-up-right-from-square"></i></a>
+                <a class="form-link" href="http://localhost:3000/formularios/form-cv.html"><span><i class="fa-solid fa-link"></i>Detalle compra-vehículo</span><i class="fa-solid fa-arrow-up-right-from-square"></i></a>
+                <a class="form-link" href="http://localhost:3000/formularios/form-envios.html"><span><i class="fa-solid fa-truck"></i>Envíos</span><i class="fa-solid fa-arrow-up-right-from-square"></i></a>
+            </div>
+        </section>
+
+        <section class="group" aria-labelledby="peopleHeading">
+            <div class="group-heading"><i class="fa-solid fa-users" aria-hidden="true"></i><h2 id="peopleHeading">Personas y ubicaciones</h2></div>
+            <div class="form-grid">
+                <a class="form-link" href="http://localhost:3000/formularios/form-clientes.html"><span><i class="fa-solid fa-user"></i>Clientes</span><i class="fa-solid fa-arrow-up-right-from-square"></i></a>
+                <a class="form-link" href="http://localhost:3000/formularios/form-empleados.html"><span><i class="fa-solid fa-user-tie"></i>Empleados</span><i class="fa-solid fa-arrow-up-right-from-square"></i></a>
+                <a class="form-link" href="http://localhost:3000/formularios/form-paises.html"><span><i class="fa-solid fa-globe"></i>Países</span><i class="fa-solid fa-arrow-up-right-from-square"></i></a>
+                <a class="form-link" href="http://localhost:3000/formularios/form-ciudades.html"><span><i class="fa-solid fa-city"></i>Ciudades</span><i class="fa-solid fa-arrow-up-right-from-square"></i></a>
+            </div>
+        </section>
+    </main>
+    <script>
+        const formLinks = [...document.querySelectorAll('.form-link')];
+        const formGroups = [...document.querySelectorAll('.group')];
+        const formFilterStatus = document.getElementById('formFilterStatus');
+        const formViewer = document.getElementById('formViewer');
+        const selectedFormFrame = document.getElementById('selectedFormFrame');
+
+        function ajustarFormularioEmbebido(frame) {
+            try {
+                const frameDocument = frame.contentDocument;
+                if (!frameDocument?.body) return;
+                frameDocument.querySelector('.sidebar-nav-wrapper')?.remove();
+                frameDocument.querySelector('.overlay')?.remove();
+                frameDocument.querySelector('.header')?.remove();
+                frameDocument.getElementById('preloader')?.remove();
+                const mainWrapper = frameDocument.querySelector('.main-wrapper');
+                if (mainWrapper) {
+                    mainWrapper.style.width = '100%';
+                    mainWrapper.style.marginLeft = '0';
+                }
+                const ajustarAltura = () => {
+                    const altura = Math.max(680, (mainWrapper?.scrollHeight || frameDocument.body.scrollHeight) + 24);
+                    frame.style.height = `${altura}px`;
+                };
+                ajustarAltura();
+                window.setTimeout(ajustarAltura, 500);
+                window.setTimeout(ajustarAltura, 1500);
+            } catch (error) {
+                console.error('No fue posible ajustar el formulario embebido:', error);
+            }
+        }
+
+        function mostrarListado() {
+            formGroups.forEach(group => group.hidden = false);
+            formViewer.hidden = true;
+            selectedFormFrame.src = 'about:blank';
+            formFilterStatus.textContent = `${formLinks.length} formularios disponibles`;
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        function mostrarFormulario(link) {
+            const nombre = link.getAttribute('href').split('/').pop();
+            const titulo = link.querySelector('span').textContent.trim();
+            formGroups.forEach(group => group.hidden = true);
+            formViewer.hidden = false;
+            selectedFormFrame.title = `Formulario ${titulo}`;
+            selectedFormFrame.src = `http://localhost:3000/formularios/${encodeURIComponent(nombre)}`;
+            formFilterStatus.textContent = `Formulario seleccionado: ${titulo}`;
+            formViewer.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+
+        document.getElementById('returnToList').addEventListener('click', mostrarListado);
+        formLinks.forEach(link => link.addEventListener('click', event => {
+            event.preventDefault();
+            mostrarFormulario(link);
+        }));
+        selectedFormFrame.addEventListener('load', () => ajustarFormularioEmbebido(selectedFormFrame));
+    </script>
+</body>
+</html>

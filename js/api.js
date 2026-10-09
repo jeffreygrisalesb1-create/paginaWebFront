@@ -6,6 +6,9 @@ async function solicitarAPI(recurso, opciones = {}) {
         headers: { 'Content-Type': 'application/json', ...(opciones.headers || {}) }
     });
     const datos = await respuesta.json().catch(() => null);
-    if (!respuesta.ok) throw new Error(datos?.mensaje || `Error HTTP ${respuesta.status}`);
+    if (!respuesta.ok) {
+        const mensaje = datos?.detalle ? `${datos.mensaje || 'Error de API'}: ${datos.detalle}` : datos?.mensaje;
+        throw new Error(mensaje || `Error HTTP ${respuesta.status}`);
+    }
     return datos;
 }

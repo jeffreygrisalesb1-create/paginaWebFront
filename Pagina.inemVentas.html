@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>JULIANCHO | Concesionario InemVentas</title>
+    <title>JULIANCHO | Concesionario InemMotors</title>
     <!-- FontAwesome para íconos -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <!-- Google Fonts -->
@@ -11,13 +11,13 @@
     <!-- Chart.js para gráficos -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     
-    <link rel="stylesheet" href="css/styles.css">
+    <link rel="stylesheet" href="css/styles.css?v=yellow-2">
 </head>
 <body>
 
     <!-- NAVBAR F]JA -->
     <nav class="navbar">
-        <a href="#inicio" class="logo" onclick="showSection('cliente')">JULIANCHO</a>
+        <a href="#inicio" class="logo" onclick="showSection('cliente')" aria-label="Inem Motors"><img src="http://localhost:3000/branding/inem-motors-logo.png" alt="Inem Motors"></a>
         <ul class="nav-links" id="navLinks">
             <li><a href="#inicio" class="active" onclick="showSection('cliente')">Inicio</a></li>
             <li><a href="#catalogo" onclick="showSection('cliente')">Catálogo</a></li>
@@ -30,7 +30,7 @@
         <!-- HERO BANNER -->
         <header class="hero" id="inicio">
             <div class="hero-content">
-                <h1>Consecionario <span>Inemita</span></h1>
+                <img class="hero-logo" src="http://localhost:3000/branding/inem-motors-logo.png" alt="Inem Motors">
                 <p>Explora la colección automotriz más exclusiva y tecnológica del mercado global. Rendimiento puro, diseño sofisticado.</p>
                 <a href="#catalogo" class="btn-primary">Ver Inventario</a>
             </div>
@@ -97,6 +97,29 @@
                 <a class="admin-image-link" href="gestor-imagenes.html" target="_blank" rel="noopener">Gestionar imágenes de vehículos</a>
             </div>
             <button class="btn-primary" style="background:var(--danger); color:#fffaf2;" onclick="logout()">Cerrar Sesión</button>
+        </div>
+
+        <div class="admin-block">
+            <h3>Pedidos pendientes de confirmación</h3>
+            <div class="table-responsive">
+                <table class="modern-table">
+                    <thead>
+                        <tr>
+                            <th>Pedido</th>
+                            <th>Cliente</th>
+                            <th>Artículos</th>
+                            <th>Total</th>
+                            <th>Transportadora</th>
+                            <th>Descripción para el cliente</th>
+                            <th>Destino</th>
+                            <th>Acción</th>
+                        </tr>
+                    </thead>
+                    <tbody id="pendingPurchasesBody">
+                        <tr><td colspan="8">Cargando pedidos...</td></tr>
+                    </tbody>
+                </table>
+            </div>
         </div>
 
         <!-- TARJETAS ESTADÍSTICAS (KPIs) -->
@@ -213,6 +236,7 @@
                 </table>
             </div>
         </div>
+
     </div>
 
 
@@ -226,6 +250,16 @@
                 </div>
                 <button class="manager-logout" onclick="logout()">Cerrar Sesión</button>
             </header>
+
+            <div class="manager-panel">
+                <div class="manager-panel-title">
+                    <h3>Formularios de administración</h3>
+                    <span>13 formularios disponibles</span>
+                </div>
+                <a class="manager-form-button" href="formularios-gerente.html" target="_blank" rel="noopener">
+                    <i class="fa-solid fa-arrow-up-right-from-square" aria-hidden="true"></i> Abrir todos los formularios
+                </a>
+            </div>
 
             <div class="manager-kpis">
                 <div class="manager-kpi">
@@ -248,6 +282,33 @@
                         <strong id="managerParts">0 Unidades</strong>
                     </div>
                     <div class="manager-kpi-icon"><i class="fa-solid fa-boxes-stacked"></i></div>
+                </div>
+            </div>
+
+            <div class="manager-analytics-grid">
+                <div class="manager-panel">
+                    <div class="manager-panel-title">
+                        <h3>Desglose de inventario por categoría</h3>
+                    </div>
+                    <div class="manager-chart-box manager-doughnut-box">
+                        <canvas id="managerInventoryChart"></canvas>
+                    </div>
+                    <div class="manager-legend">
+                        <span><i class="veh"></i>Vehículos</span>
+                        <span><i class="prod"></i>Productos</span>
+                        <span><i class="rep"></i>Repuestos</span>
+                    </div>
+                </div>
+
+                <div class="manager-panel">
+                    <div class="manager-panel-title">
+                        <h3>Vehículos más vendidos</h3>
+                        <span>Compras confirmadas</span>
+                    </div>
+                    <p id="managerTopVehiclesNote" class="manager-sales-note">Calculando ventas de vehículos...</p>
+                    <div class="manager-chart-box manager-top-vehicles-box">
+                        <canvas id="managerTopVehiclesChart"></canvas>
+                    </div>
                 </div>
             </div>
 
@@ -274,19 +335,6 @@
                 </div>
             </div>
 
-            <div class="manager-panel">
-                <div class="manager-panel-title">
-                    <h3>Desglose de Inventario por Categoría</h3>
-                </div>
-                <div class="manager-chart-box">
-                    <canvas id="managerInventoryChart"></canvas>
-                </div>
-                <div class="manager-legend">
-                                <span><i class="veh"></i>Vehículos</span>
-                                <span><i class="prod"></i>Productos</span>
-                                <span><i class="rep"></i>Repuestos</span>
-                </div>
-            </div>
         </div>
     </section>
 

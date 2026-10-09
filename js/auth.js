@@ -35,16 +35,18 @@ async function validarAcceso(e) {
     e.preventDefault();
     const rol = document.getElementById('accessRole').value;
     let accesoValido = false;
+    let empleadoValidado = null;
 
     if (rol === 'trabajador') {
         try {
             const empleados = await solicitarAPI('empleados');
             const nombreIngresado = normalizarTextoAcceso(document.getElementById('staffName').value);
             const dniIngresado = normalizarDni(document.getElementById('staffDni').value);
-            accesoValido = Array.isArray(empleados) && empleados.some(empleado =>
+            empleadoValidado = Array.isArray(empleados) ? empleados.find(empleado =>
                 normalizarTextoAcceso(empleado.nombre) === nombreIngresado &&
                 normalizarDni(empleado.dni) === dniIngresado
-            );
+            ) : null;
+            accesoValido = Boolean(empleadoValidado);
         } catch (error) {
             alert(`No fue posible validar los datos con la base de datos: ${error.message}`);
             return;
@@ -56,6 +58,7 @@ async function validarAcceso(e) {
     }
 
     if (accesoValido) {
+        empleadoActivo = empleadoValidado;
         closeLoginModal();
         showSection(rol);
         document.getElementById('authBtn').innerHTML = rol === 'gerente'
@@ -71,6 +74,7 @@ async function validarAcceso(e) {
 }
 
 function logout() {
+    empleadoActivo = null;
     showSection('cliente');
     document.getElementById('authBtn').innerHTML = `<i class="fa-solid fa-lock-open"></i> Acceso Personal`;
 }

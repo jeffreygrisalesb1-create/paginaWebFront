@@ -253,9 +253,39 @@ async function finalizarCompra(event) {
             })
         });
 
+        // Guardar pedido en el mapa de estados para seguimiento en tiempo real
+        try {
+            const statusMap = JSON.parse(localStorage.getItem('inemMotors.orderStatusMap') || '{}');
+            statusMap[String(purchaseId)] = {
+                estado: 'Pendiente',
+                clienteNombre: customer.nombre,
+                clienteDni: customer.dni,
+                clienteCorreo: customer.correo,
+                articulos: selectedItems.map(i => i.name).join(', '),
+                total: selectedItems.reduce((sum, item) => sum + item.price, 0),
+                fecha: new Date().toISOString().slice(0, 10),
+                transportadora: fieldValue(carrier, 'nombre'),
+                destino: `${fieldValue(city, 'nombre')}, ${fieldValue(country, 'nombre')}`
+            };
+            localStorage.setItem('inemMotors.orderStatusMap', JSON.stringify(statusMap));
+            localStorage.setItem('inemMotors.lastCustomerDni', customer.dni);
+        } catch (e) {
+            console.warn('No se pudo guardar pedido localmente:', e);
+        }
+
         document.getElementById('checkoutForm').querySelectorAll('select, input, button[type="submit"]').forEach(control => control.disabled = true);
         document.getElementById('checkoutStatus').classList.remove('error');
-        document.getElementById('checkoutStatus').innerHTML = `Pedido #${escapeHtml(purchaseId)} enviado. Transportadora asignada: <strong>${escapeHtml(fieldValue(carrier, 'nombre'))}</strong>. Está pendiente de confirmación por un trabajador.`;
+        document.getElementById('checkoutStatus').innerHTML = `
+            <div style="padding:10px 0;">
+                <p style="margin:0 0 10px;font-size:1.05rem;">
+                    ¡Solicitud de pedido <strong>#${escapeHtml(purchaseId)}</strong> registrada! Transportadora asignada: <strong>${escapeHtml(fieldValue(carrier, 'nombre'))}</strong>.
+                    <br><small style="color:var(--checkout-muted);">Está pendiente de confirmación por un trabajador.</small>
+                </p>
+                <a href="Pagina.inemVentas.html#mis-pedidos" style="display:inline-flex;align-items:center;gap:8px;background:#2962ff;color:#fff;padding:9px 18px;border-radius:6px;text-decoration:none;font-weight:700;font-size:.9rem;">
+                    <i class="fa-solid fa-receipt"></i> Rastrear en "Mis Pedidos"
+                </a>
+            </div>
+        `;
     } catch (error) {
         const message = purchaseId
             ? `El pedido #${purchaseId} se creó, pero faltó asociar algún dato: ${error.message}. No lo envíes de nuevo; contacta a un trabajador.`

@@ -3,53 +3,103 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>JULIANCHO | Concesionario InemMotors</title>
+    <title>Inem Motors | Tu Concesionario de Confianza</title>
+    <meta name="description" content="Explora la colección automotriz más exclusiva: vehículos, repuestos y productos premium. Rendimiento, diseño sofisticado y atención personalizada en Inem Motors.">
+    <meta name="theme-color" content="#17130f">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🏎️</text></svg>" type="image/svg+xml">
     <!-- FontAwesome para íconos -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <!-- Google Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
     <!-- Chart.js para gráficos -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    
-    <link rel="stylesheet" href="css/styles.css?v=yellow-2">
+    <link rel="stylesheet" href="css/styles.css?v=9">
 </head>
 <body>
 
-    <!-- NAVBAR F]JA -->
-    <nav class="navbar">
-        <a href="#inicio" class="logo" onclick="showSection('cliente')" aria-label="Inem Motors"><img src="http://localhost:3000/branding/inem-motors-logo.png" alt="Inem Motors"></a>
+    <!-- NAVBAR FIJA -->
+    <nav class="navbar" id="mainNavbar">
+        <a href="#inicio" class="logo" onclick="irAInicio();closeMenu()" aria-label="Inem Motors">
+            <img src="assets/branding/inem-motors-logo.png" alt="Inem Motors" class="nav-logo">
+            <span class="logo-text">INEM<span>MOTORS</span></span>
+        </a>
         <ul class="nav-links" id="navLinks">
-            <li><a href="#inicio" class="active" onclick="showSection('cliente')">Inicio</a></li>
-            <li><a href="#catalogo" onclick="showSection('cliente')">Catálogo</a></li>
+            <li><a href="#inicio" class="active" onclick="irAInicio();closeMenu()">Inicio</a></li>
+            <li><a href="#nosotros" onclick="abrirInventario('nosotros');closeMenu()">Nosotros</a></li>
+            <li><a href="#catalogo" onclick="abrirInventario('catalogo');closeMenu()">Catálogo</a></li>
+            <li><a href="#mis-pedidos" class="nav-orders-btn" onclick="abrirModalMisPedidos();closeMenu()"><i class="fa-solid fa-receipt"></i> Mis Pedidos</a></li>
         </ul>
         <button class="btn-admin-nav" id="authBtn" onclick="openLoginModal()"><i class="fa-solid fa-lock-open"></i> Acceso Personal</button>
+        <button class="hamburger" id="hamburgerBtn" onclick="toggleMenu()" aria-label="Abrir menú">
+            <span></span><span></span><span></span>
+        </button>
     </nav>
 
-    <!-- RUTA COMPONENTE CLIENTE -->
+    <!-- CONTENEDOR DE TOASTS -->
+    <div class="toast-container" id="toastContainer" aria-live="polite"></div>
+
+    <!-- VISTA CLIENTE -->
     <div id="clientView">
         <!-- HERO BANNER -->
         <header class="hero" id="inicio">
             <div class="hero-content">
-                <img class="hero-logo" src="http://localhost:3000/branding/inem-motors-logo.png" alt="Inem Motors">
-                <p>Explora la colección automotriz más exclusiva y tecnológica del mercado global. Rendimiento puro, diseño sofisticado.</p>
-                <a href="#catalogo" class="btn-primary">Ver Inventario</a>
+                <img class="hero-logo" src="assets/branding/inem-motors-logo.png" alt="Inem Motors Logo">
+                <h1 class="hero-title">INEM <span>MOTORS</span></h1>
+                <button type="button" class="btn-primary hero-btn" id="btnVerInventario" onclick="abrirInventario('catalogo')">
+                    VER INVENTARIO
+                </button>
             </div>
         </header>
 
-        <!-- CONTENEDOR PRINCIPAL CATÁLOGO -->
+        <!-- CONTENIDO DEL CATÁLOGO Y NOSOTROS (OCULTO HASTA DAR CLIC EN VER INVENTARIO) -->
+        <div id="contenidoCatalogo" class="contenido-catalogo is-hidden">
+            <!-- SOBRE NOSOTROS -->
+            <section class="about-section" id="nosotros">
+            <div class="about-container">
+                <div class="about-text reveal-on-scroll">
+                    <span class="section-eyebrow">Quiénes Somos</span>
+                    <h2 class="section-title">La excelencia automotriz en cada detalle</h2>
+                    <p>En <strong>Inem Motors</strong> nos especializamos en ofrecer vehículos de alta gama, repuestos originales y productos de cuidado premium. Nuestra pasión por la industria automotriz se refleja en cada transacción, brindando asesoría personalizada y garantía de calidad en cada uno de nuestros productos.</p>
+                </div>
+                <div class="about-stats">
+                    <div class="stat-counter reveal-on-scroll">
+                        <i class="fa-solid fa-car-side"></i>
+                        <strong data-count="500">0</strong>
+                        <span>Vehículos vendidos</span>
+                    </div>
+                    <div class="stat-counter reveal-on-scroll">
+                        <i class="fa-solid fa-users"></i>
+                        <strong data-count="1200">0</strong>
+                        <span>Clientes satisfechos</span>
+                    </div>
+                    <div class="stat-counter reveal-on-scroll">
+                        <i class="fa-solid fa-award"></i>
+                        <strong data-count="15">0</strong>
+                        <span>Años de experiencia</span>
+                    </div>
+                    <div class="stat-counter reveal-on-scroll">
+                        <i class="fa-solid fa-headset"></i>
+                        <strong data-count="24">0</strong>
+                        <span>Soporte 24/7</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- CATÁLOGO -->
         <main class="main-container" id="catalogo">
-            <h2 class="section-title">Catálogo de Exclusividades</h2>
-            <p id="catalogStatus" role="status" style="color:var(--text-muted); margin:-1rem 0 1.5rem;">Conectando con el inventario...</p>
-            
+            <h2 class="section-title reveal-on-scroll">Catálogo de Exclusividades</h2>
+            <p id="catalogStatus" role="status" class="catalog-status">Conectando con el inventario...</p>
+
             <!-- BUSCADOR Y FILTROS -->
-            <div class="search-filter-wrapper">
+            <div class="search-filter-wrapper reveal-on-scroll">
                 <div class="search-box">
                     <i class="fa-solid fa-magnifying-glass"></i>
                     <input type="text" id="searchInput" placeholder="Buscar vehículos, repuestos o productos por nombre o marca..." oninput="filtrarCatalogo()">
                 </div>
                 <div class="filters-grid">
                     <div class="filter-group">
-                        <label>Categoría</label>
+                        <label for="filterCategory">Categoría</label>
                         <select id="filterCategory" onchange="filtrarCatalogo()">
                             <option value="todos">Todas las categorías</option>
                             <option value="Vehículos">Vehículos</option>
@@ -58,19 +108,19 @@
                         </select>
                     </div>
                     <div class="filter-group">
-                        <label>Marca</label>
+                        <label for="filterBrand">Marca</label>
                         <select id="filterBrand" onchange="filtrarCatalogo()">
                             <option value="todos">Todas las marcas</option>
                         </select>
                     </div>
                     <div class="filter-group">
-                        <label>Condición / tipo</label>
+                        <label for="filterStatus">Condición / tipo</label>
                         <select id="filterStatus" onchange="filtrarCatalogo()">
                             <option value="todos">Todos</option>
                         </select>
                     </div>
                     <div class="filter-group">
-                        <label>Precio Máximo</label>
+                        <label for="filterPrice">Precio Máximo</label>
                         <select id="filterPrice" onchange="filtrarCatalogo()">
                             <option value="todos">Cualquier precio</option>
                             <option value="50000">Hasta $50,000</option>
@@ -81,38 +131,60 @@
                 </div>
             </div>
 
-            <!-- GRILLA DINÁMICA DE TARJETAS -->
-            <div class="catalog-grid" id="catalogGrid">
-                <!-- Inyectado mediante JS -->
+            <!-- SKELETON LOADING -->
+            <div class="catalog-grid" id="skeletonGrid">
+                <div class="skeleton-card"><div class="skeleton-img"></div><div class="skeleton-line w80"></div><div class="skeleton-line w60"></div><div class="skeleton-line w40"></div></div>
+                <div class="skeleton-card"><div class="skeleton-img"></div><div class="skeleton-line w80"></div><div class="skeleton-line w60"></div><div class="skeleton-line w40"></div></div>
+                <div class="skeleton-card"><div class="skeleton-img"></div><div class="skeleton-line w80"></div><div class="skeleton-line w60"></div><div class="skeleton-line w40"></div></div>
             </div>
+
+            <!-- GRILLA DINÁMICA DE TARJETAS -->
+            <div class="catalog-grid" id="catalogGrid"></div>
         </main>
+        </div>
     </div>
 
-    <!-- RUTA COMPONENTE PORTAL ADMINISTRADOR -->
+    <!-- PORTAL ADMINISTRADOR -->
     <div id="adminView" class="admin-section main-container">
         <div class="admin-header">
             <div>
-                <h2 style="font-family:'Orbitron', sans-serif;">PANEL DE OPERACIONES DEL TRABAJADOR</h2>
-                <p style="color:var(--text-muted); font-size:0.9rem;">Gestión operativa de inventario y existencias</p>
+                <h2 class="admin-header-title">PANEL DE OPERACIONES DEL TRABAJADOR</h2>
+                <p class="admin-header-subtitle">Gestión operativa de inventario y existencias</p>
                 <a class="admin-image-link" href="gestor-imagenes.html" target="_blank" rel="noopener">Gestionar imágenes de vehículos</a>
             </div>
-            <button class="btn-primary" style="background:var(--danger); color:#fffaf2;" onclick="logout()">Cerrar Sesión</button>
+            <button class="btn-primary btn-danger" onclick="logout()">Cerrar Sesión</button>
         </div>
 
         <div class="admin-block">
-            <h3>Pedidos pendientes de confirmación</h3>
+            <div class="admin-block-header">
+                <div>
+                    <h3>Gestión de Solicitudes y Pedidos</h3>
+                    <p class="admin-block-sub">Control de aprobaciones, despachos y estado en tiempo real</p>
+                </div>
+                <div class="admin-filter-bar">
+                    <label for="workerOrderFilter"><i class="fa-solid fa-filter"></i> Estado:</label>
+                    <select id="workerOrderFilter" onchange="renderizarComprasPendientes()">
+                        <option value="todos">Todos los pedidos</option>
+                        <option value="Pendiente" selected>🟡 Pendientes</option>
+                        <option value="Aprobado">🟢 Aprobados</option>
+                        <option value="Asignado a Transportadora">🚚 En Transporte</option>
+                        <option value="Entregado">🏁 Entregados</option>
+                        <option value="Rechazado">🔴 Rechazados</option>
+                    </select>
+                </div>
+            </div>
             <div class="table-responsive">
                 <table class="modern-table">
                     <thead>
                         <tr>
-                            <th>Pedido</th>
+                            <th>N° Pedido</th>
                             <th>Cliente</th>
-                            <th>Artículos</th>
+                            <th>Vehículo / Artículos</th>
+                            <th>Fecha</th>
                             <th>Total</th>
-                            <th>Transportadora</th>
-                            <th>Descripción para el cliente</th>
-                            <th>Destino</th>
-                            <th>Acción</th>
+                            <th>Estado Actual</th>
+                            <th>Detalles / Guía</th>
+                            <th>Acciones</th>
                         </tr>
                     </thead>
                     <tbody id="pendingPurchasesBody">
@@ -122,91 +194,77 @@
             </div>
         </div>
 
-        <!-- TARJETAS ESTADÍSTICAS (KPIs) -->
+        <!-- KPIs -->
         <div class="dashboard-grid">
             <div class="stat-card">
-                <div class="stat-info">
-                    <h3>Ventas del Mes</h3>
-                    <p id="kpiVentasCount">—</p>
-                </div>
+                <div class="stat-info"><h3>Ventas del Mes</h3><p id="kpiVentasCount">—</p></div>
                 <div class="stat-icon"><i class="fa-solid fa-cart-shopping"></i></div>
             </div>
             <div class="stat-card">
-                <div class="stat-info">
-                    <h3>Ingresos Totales</h3>
-                    <p id="kpiIngresos">No reportados</p>
-                </div>
-                <div class="stat-icon" style="color: var(--success);"><i class="fa-solid fa-wallet"></i></div>
+                <div class="stat-info"><h3>Ingresos Totales</h3><p id="kpiIngresos">No reportados</p></div>
+                <div class="stat-icon icon-success"><i class="fa-solid fa-wallet"></i></div>
             </div>
             <div class="stat-card">
                 <div class="stat-info">
                     <h3>Eficiencia Operativa</h3>
-                    <div style="display:flex; align-items:center; gap:10px; margin-top:0.5rem;">
+                    <div class="semaforo-wrapper">
                         <span class="semaforo verde" id="semaforoIndicador"></span>
-                        <span id="semaforoTexto" style="font-weight:600;">Métricas no disponibles</span>
+                        <span id="semaforoTexto" class="semaforo-text">Métricas no disponibles</span>
                     </div>
                 </div>
                 <div class="stat-icon"><i class="fa-solid fa-gauge-high"></i></div>
             </div>
         </div>
 
-        <!-- LAYOUT DE OPERACIONES -->
+        <!-- GRÁFICOS Y FORMULARIOS -->
         <div class="admin-layout-two-col">
-            <!-- GRÁFICO DE RENDIMIENTO -->
             <div class="admin-block">
                 <h3>Inventario registrado en base de datos</h3>
-                <div style="position: relative; height:280px; width:100%;">
-                    <canvas id="salesChart"></canvas>
-                </div>
+                <div class="chart-wrapper"><canvas id="salesChart"></canvas></div>
                 <iframe class="looker-report-frame" title="Panel de inventario de Looker Studio" src="https://datastudio.google.com/embed/reporting/c868d5c1-e4ef-4552-badb-4fa3686f4162/page/FFtqF" frameborder="0" allowfullscreen sandbox="allow-storage-access-by-user-activation allow-scripts allow-same-origin allow-popups allow-popups-to-escape-sandbox"></iframe>
             </div>
 
-            <!-- FORMULARIO DE INGRESO DE STOCK -->
             <div class="admin-block">
                 <h3>Registrar Nuevo Elemento</h3>
                 <form id="newItemForm" onsubmit="agregarNuevoItem(event)">
                     <div class="form-group">
-                        <label>Categoría Organizacional</label>
-                        <select id="formCategory" required onchange="actualizarFormularioCategoria()" style="width:100%; padding:0.8rem; background:#17130f; border:1px solid var(--border-card); color:#fffaf2;">
-                            <option value="Vehículos">Vehículo</option>
-                            <option value="Productos">Producto / accesorio</option>
-                            <option value="Repuestos">Repuesto</option>
-                        </select>
+                        <label for="formCategory">Categoría Organizacional</label>
+                        <select id="formCategory" required onchange="actualizarFormularioCategoria()"></select>
                     </div>
                     <div class="form-group">
-                        <label>Clasificación</label>
-                        <select id="formDbCategory" required style="width:100%; padding:0.8rem; background:#17130f; border:1px solid var(--border-card); color:#fffaf2;"></select>
+                        <label for="formDbCategory">Clasificación</label>
+                        <select id="formDbCategory" required></select>
                     </div>
                     <div class="form-group">
-                        <label>Nombre del Elemento</label>
+                        <label for="formName">Nombre del Elemento</label>
                         <input type="text" id="formName" required placeholder="Nombre del elemento">
                     </div>
-                    <div class="form-row" style="display:grid; grid-template-columns: 1fr 1fr; gap:1rem;">
+                    <div class="form-row">
                         <div class="form-group" id="formBrandGroup">
-                            <label>Marca</label>
+                            <label for="formBrand">Marca</label>
                             <input type="text" id="formBrand" placeholder="Marca">
                         </div>
                         <div class="form-group" id="formModelGroup">
-                            <label>Modelo</label>
+                            <label for="formModel">Modelo</label>
                             <input type="text" id="formModel" placeholder="Modelo">
                         </div>
                     </div>
-                    <div class="form-row" style="display:grid; grid-template-columns: 1fr 1fr; gap:1rem;">
+                    <div class="form-row">
                         <div class="form-group" id="formPlateGroup">
-                            <label>Placa</label>
+                            <label for="formPlate">Placa</label>
                             <input type="text" id="formPlate" placeholder="Placa">
                         </div>
                         <div class="form-group" id="formColorGroup">
-                            <label>Color</label>
+                            <label for="formColor">Color</label>
                             <input type="text" id="formColor" placeholder="Color">
                         </div>
                     </div>
                     <div class="form-group">
-                        <label>Precio</label>
+                        <label for="formPrice">Precio</label>
                         <input type="number" id="formPrice" min="0" step="0.01" required placeholder="Precio">
                     </div>
                     <div class="form-group" id="formStockGroup">
-                        <label>Cantidad</label>
+                        <label for="formStock">Cantidad</label>
                         <input type="number" id="formStock" min="0" step="1" placeholder="Cantidad disponible">
                     </div>
                     <button type="submit" class="btn-submit">Ingresar al Inventario</button>
@@ -214,33 +272,24 @@
             </div>
         </div>
 
-        <!-- TABLA COMPLETA DE GESTIÓN DE STOCK -->
+        <!-- TABLA INVENTARIO -->
         <div class="admin-block">
             <h3>Control Operativo de Inventario</h3>
             <div class="table-responsive">
                 <table class="modern-table">
                     <thead>
                         <tr>
-                            <th>ID</th>
-                            <th>Elemento</th>
-                            <th>Categoría</th>
-                            <th>Marca</th>
-                            <th>Precio</th>
-                            <th>Stock</th>
-                            <th>Alertas</th>
+                            <th>ID</th><th>Elemento</th><th>Categoría</th><th>Marca</th>
+                            <th>Precio</th><th>Stock</th><th>Alertas</th>
                         </tr>
                     </thead>
-                    <tbody id="inventoryTableBody">
-                        <!-- Inyectado mediante JS -->
-                    </tbody>
+                    <tbody id="inventoryTableBody"></tbody>
                 </table>
             </div>
         </div>
-
     </div>
 
-
-    <!-- RUTA COMPONENTE GERENCIA GENERAL -->
+    <!-- PANEL GERENCIA -->
     <section id="managerView" class="manager-section">
         <div class="manager-container">
             <header class="manager-header">
@@ -263,52 +312,33 @@
 
             <div class="manager-kpis">
                 <div class="manager-kpi">
-                    <div>
-                        <small>Valor de inventario vehicular</small>
-                                <strong id="managerCapital">—</strong>
-                    </div>
+                    <div><small>Valor de inventario vehicular</small><strong id="managerCapital">—</strong></div>
                     <div class="manager-kpi-icon"><i class="fa-solid fa-money-bill-transfer"></i></div>
                 </div>
                 <div class="manager-kpi">
-                    <div>
-                        <small>Stock total automotores</small>
-                        <strong id="managerVehicles">0 Unidades</strong>
-                    </div>
+                    <div><small>Stock total automotores</small><strong id="managerVehicles">0 Unidades</strong></div>
                     <div class="manager-kpi-icon"><i class="fa-solid fa-car-side"></i></div>
                 </div>
                 <div class="manager-kpi">
-                    <div>
-                        <small>Referencias de productos</small>
-                        <strong id="managerParts">0 Unidades</strong>
-                    </div>
+                    <div><small>Referencias de productos</small><strong id="managerParts">0 Unidades</strong></div>
                     <div class="manager-kpi-icon"><i class="fa-solid fa-boxes-stacked"></i></div>
                 </div>
             </div>
 
             <div class="manager-analytics-grid">
                 <div class="manager-panel">
-                    <div class="manager-panel-title">
-                        <h3>Desglose de inventario por categoría</h3>
-                    </div>
-                    <div class="manager-chart-box manager-doughnut-box">
-                        <canvas id="managerInventoryChart"></canvas>
-                    </div>
+                    <div class="manager-panel-title"><h3>Desglose de inventario por categoría</h3></div>
+                    <div class="manager-chart-box manager-doughnut-box"><canvas id="managerInventoryChart"></canvas></div>
                     <div class="manager-legend">
                         <span><i class="veh"></i>Vehículos</span>
                         <span><i class="prod"></i>Productos</span>
                         <span><i class="rep"></i>Repuestos</span>
                     </div>
                 </div>
-
                 <div class="manager-panel">
-                    <div class="manager-panel-title">
-                        <h3>Vehículos más vendidos</h3>
-                        <span>Compras confirmadas</span>
-                    </div>
+                    <div class="manager-panel-title"><h3>Vehículos más vendidos</h3><span>Compras confirmadas</span></div>
                     <p id="managerTopVehiclesNote" class="manager-sales-note">Calculando ventas de vehículos...</p>
-                    <div class="manager-chart-box manager-top-vehicles-box">
-                        <canvas id="managerTopVehiclesChart"></canvas>
-                    </div>
+                    <div class="manager-chart-box manager-top-vehicles-box"><canvas id="managerTopVehiclesChart"></canvas></div>
                 </div>
             </div>
 
@@ -322,23 +352,18 @@
                     <table class="manager-table">
                         <thead>
                             <tr>
-                                <th>Ranking</th>
-                                <th>ID Empleado</th>
-                                <th>Nombre del empleado</th>
-                                <th>Compras</th>
-                                <th>Artículos</th>
-                                <th>Ingreso estimado</th>
+                                <th>Ranking</th><th>ID Empleado</th><th>Nombre del empleado</th>
+                                <th>Compras</th><th>Artículos</th><th>Ingreso estimado</th>
                             </tr>
                         </thead>
                         <tbody id="managerEmployeesBody"><tr><td colspan="6">Cargando ventas...</td></tr></tbody>
                     </table>
                 </div>
             </div>
-
         </div>
     </section>
 
-    <!-- MODAL DE ACCESO DEL PERSONAL -->
+    <!-- MODAL LOGIN -->
     <div class="modal" id="loginModal">
         <div class="login-card">
             <button class="close-modal" onclick="closeLoginModal()"><i class="fa-solid fa-xmark"></i></button>
@@ -346,7 +371,7 @@
             <form onsubmit="validarAcceso(event)">
                 <div class="form-group">
                     <label><i class="fa-solid fa-user-tie"></i> Tipo de acceso</label>
-                    <select id="accessRole" required onchange="cambiarTipoAcceso()" style="width:100%; padding:0.8rem 1rem; background:rgba(40,30,20,.55); border:1px solid var(--border-card); border-radius:4px; color:#fffaf2;">
+                    <select id="accessRole" required onchange="cambiarTipoAcceso()">
                         <option value="trabajador">Trabajador</option>
                         <option value="gerente">Gerente</option>
                     </select>
@@ -368,7 +393,7 @@
                     <input type="password" id="staffPass" placeholder="••••••••">
                 </div>
                 <button type="submit" class="btn-submit">Ingresar al sistema</button>
-                <p style="margin-top:1rem;color:var(--text-muted);font-size:.72rem;text-align:center;line-height:1.5;">
+                <p class="login-hint">
                     Para trabajadores, usa el nombre y DNI registrados en la base.<br>
                     Acceso de gerente de demostración: <strong>GERENTE / 5678</strong>
                 </p>
@@ -376,15 +401,98 @@
         </div>
     </div>
 
-    <!-- MODAL DE DETALLES DEL VEHÍCULO -->
+    <!-- MODAL DETALLES VEHÍCULO -->
     <div class="modal" id="vehicleDetailModal">
         <div id="vehicleDetailBody" class="vehicle-detail-card"></div>
     </div>
 
-    <!-- LÓGICA DE NEGOCIO Y SCRIPTING -->
+    <!-- MODAL MIS PEDIDOS (VISTA CLIENTE) -->
+    <div class="modal" id="ordersModal">
+        <div class="orders-card">
+            <button class="close-modal" onclick="cerrarModalMisPedidos()" aria-label="Cerrar"><i class="fa-solid fa-xmark"></i></button>
+            <div class="orders-modal-header">
+                <div class="orders-modal-icon"><i class="fa-solid fa-receipt"></i></div>
+                <div>
+                    <h2>ESTADO DE MIS PEDIDOS</h2>
+                    <p>Consulta en tiempo real el progreso de tu solicitud ingresando tu DNI, correo o N° de pedido.</p>
+                </div>
+            </div>
+            <div class="orders-search-box">
+                <i class="fa-solid fa-magnifying-glass search-ico"></i>
+                <input type="text" id="orderSearchInput" placeholder="Ingresa tu DNI, correo electrónico o # de compra..." onkeyup="if(event.key==='Enter') buscarMisPedidos()">
+                <button type="button" class="btn-primary" onclick="buscarMisPedidos()"><i class="fa-solid fa-magnifying-glass"></i> Consultar</button>
+            </div>
+            <div id="ordersResultsList" class="orders-results-list">
+                <!-- Se llena dinámicamente con los pedidos -->
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL RECHAZO DE PEDIDO (TRABAJADOR) -->
+    <div class="modal" id="rejectOrderModal">
+        <div class="reject-card">
+            <button class="close-modal" onclick="cerrarModalRechazo()" aria-label="Cerrar"><i class="fa-solid fa-xmark"></i></button>
+            <div class="reject-modal-header">
+                <i class="fa-solid fa-triangle-exclamation reject-ico"></i>
+                <div>
+                    <h2>RECHAZAR SOLICITUD DE COMPRA</h2>
+                    <p id="rejectModalOrderSubtitle">Indica el motivo del rechazo para que el cliente lo vea en su panel de pedidos.</p>
+                </div>
+            </div>
+            <form id="rejectOrderForm" onsubmit="confirmarRechazoPedido(event)">
+                <input type="hidden" id="rejectOrderId">
+                <div class="form-group">
+                    <label for="quickRejectReason"><i class="fa-solid fa-list-check"></i> Motivo rápido sugerido</label>
+                    <select id="quickRejectReason" onchange="seleccionarMotivoRapido(this.value)">
+                        <option value="">Selecciona un motivo común...</option>
+                        <option value="Datos incorrectos o documento no coincide con el cliente">Datos incorrectos o documento no coincide con el cliente</option>
+                        <option value="Pago o comprobante de transferencia no verificado">Pago o comprobante de transferencia no verificado</option>
+                        <option value="Vehículo o producto agotado temporalmente en inventario">Vehículo o producto agotado temporalmente en inventario</option>
+                        <option value="Cliente incontactable para coordinar despacho">Cliente incontactable para coordinar despacho</option>
+                        <option value="Destino fuera del área de cobertura de la transportadora">Destino fuera del área de cobertura de la transportadora</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="rejectReasonDetails"><i class="fa-solid fa-pen-to-square"></i> Explicación detallada para el cliente (Obligatoria)</label>
+                    <textarea id="rejectReasonDetails" rows="3" placeholder="Describe brevemente el motivo por el cual no se puede proceder..." required></textarea>
+                </div>
+                <div class="reject-modal-actions">
+                    <button type="button" class="btn-cancel-modal" onclick="cerrarModalRechazo()">Cancelar</button>
+                    <button type="submit" class="btn-primary btn-danger"><i class="fa-solid fa-ban"></i> Confirmar Rechazo</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- FOOTER -->
+    <footer class="site-footer" id="siteFooter" style="display: none;">
+        <div class="footer-content">
+            <div class="footer-brand">
+                <span class="footer-logo">INEM<span>MOTORS</span></span>
+                <p>Tu concesionario de confianza. Vehículos premium, repuestos originales y atención personalizada.</p>
+            </div>
+            <div class="footer-contact">
+                <h4>Contacto</h4>
+                <a href="mailto:contacto@inemmotors.com"><i class="fa-solid fa-envelope"></i> contacto@inemmotors.com</a>
+                <a href="tel:+573000000000"><i class="fa-solid fa-phone"></i> +57 300 000 0000</a>
+                <a href="#inicio" onclick="irAInicio()"><i class="fa-solid fa-location-dot"></i> Colombia</a>
+            </div>
+            <div class="footer-links">
+                <h4>Navegación</h4>
+                <a href="#inicio" onclick="irAInicio()">Inicio</a>
+                <a href="#nosotros" onclick="abrirInventario('nosotros')">Nosotros</a>
+                <a href="#catalogo" onclick="abrirInventario('catalogo')">Catálogo</a>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <p>&copy; 2026 Inem Motors — Todos los derechos reservados.</p>
+        </div>
+    </footer>
+
+    <!-- SCRIPTS -->
     <script src="js/api.js"></script>
     <script src="js/image-store.js"></script>
-    <script src="js/app.js?v=3"></script>
+    <script src="js/app.js?v=9"></script>
     <script src="js/auth.js"></script>
 </body>
 </html>

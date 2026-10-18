@@ -1313,3 +1313,123 @@ select option { background-color: #1a1410; color: #ffffff; }
         grid-template-columns: 1fr;
     }
 }
+
+/* Identificación de cliente en Mis Pedidos */
+.customer-greeting-box {
+    background: linear-gradient(135deg, rgba(41, 98, 255, 0.12), rgba(16, 185, 129, 0.08));
+    border: 1px solid rgba(41, 98, 255, 0.35);
+    border-radius: 10px;
+    padding: 1rem 1.4rem;
+    margin-bottom: 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    animation: fadeInGreeting 0.3s ease-out;
+}
+@keyframes fadeInGreeting {
+    from { opacity: 0; transform: translateY(-6px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+.customer-greeting-avatar {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    background: #2962ff;
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.25rem;
+    flex-shrink: 0;
+    box-shadow: 0 0 15px rgba(41, 98, 255, 0.4);
+}
+.customer-greeting-info h3 {
+    margin: 0;
+    font-size: 1.05rem;
+    color: #fff;
+    font-weight: 700;
+}
+.customer-greeting-info p {
+    margin: 0.15rem 0 0;
+    font-size: 0.85rem;
+    color: #94a3b8;
+}
+
+/* Control de Lapso de Entrega y Guía en panel del Trabajador */
+.worker-delivery-controls {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    min-width: 200px;
+}
+.order-carrier-select, .order-timeframe-select {
+    width: 100%;
+    background: #17130f;
+    border: 1px solid var(--border-card);
+    color: #fffaf2;
+    padding: 0.45rem 0.6rem;
+    border-radius: 4px;
+    font-size: 0.8rem;
+    outline: none;
+    cursor: pointer;
+}
+.order-carrier-select:focus, .order-timeframe-select:focus {
+    border-color: #2962ff;
+}
+.order-description-input {
+    width: 100%;
+    background: #17130f;
+    border: 1px solid var(--border-card);
+    color: #fffaf2;
+    padding: 0.45rem 0.6rem;
+    border-radius: 4px;
+    font-size: 0.8rem;
+    outline: none;
+}
+.order-description-input:focus {
+    border-color: #2962ff;
+}
+
+/* Insignias de fechas en pedidos de cliente */
+.client-order-dates-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.8rem;
+    margin-top: 0.6rem;
+    padding: 0.75rem 1rem;
+    background: rgba(0, 0, 0, 0.25);
+    border-radius: 8px;
+    border-left: 3px solid #2962ff;
+}
+.order-date-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    font-size: 0.84rem;
+    color: #e2e8f0;
+}
+.order-date-pill i {
+    color: #60a5fa;
+}
+.order-date-pill strong {
+    color: #fff;
+}
+.order-date-pill.delivered-pill {
+    color: #4ade80;
+}
+.order-date-pill.delivered-pill i {
+    color: #22c55e;
+}
+.order-timeframe-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: rgba(245, 158, 11, 0.15);
+    border: 1px solid rgba(245, 158, 11, 0.4);
+    color: #fbbf24;
+    padding: 0.35rem 0.75rem;
+    border-radius: 6px;
+    font-size: 0.82rem;
+    font-weight: 600;
+}
+

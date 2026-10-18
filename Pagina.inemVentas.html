@@ -27,7 +27,7 @@
             <li><a href="#inicio" class="active" onclick="irAInicio();closeMenu()">Inicio</a></li>
             <li><a href="#nosotros" onclick="abrirInventario('nosotros');closeMenu()">Nosotros</a></li>
             <li><a href="#catalogo" onclick="abrirInventario('catalogo');closeMenu()">Catálogo</a></li>
-            <li><a href="#mis-pedidos" class="nav-orders-btn" onclick="abrirModalMisPedidos();closeMenu()"><i class="fa-solid fa-receipt"></i> Mis Pedidos</a></li>
+            <li><a href="javascript:void(0)" class="nav-orders-btn" onclick="abrirModalMisPedidos();closeMenu()"><i class="fa-solid fa-receipt"></i> Mis Pedidos</a></li>
         </ul>
         <button class="btn-admin-nav" id="authBtn" onclick="openLoginModal()"><i class="fa-solid fa-lock-open"></i> Acceso Personal</button>
         <button class="hamburger" id="hamburgerBtn" onclick="toggleMenu()" aria-label="Abrir menú">
@@ -180,10 +180,10 @@
                             <th>N° Pedido</th>
                             <th>Cliente</th>
                             <th>Vehículo / Artículos</th>
-                            <th>Fecha</th>
+                            <th>Fecha Compra</th>
                             <th>Total</th>
                             <th>Estado Actual</th>
-                            <th>Detalles / Guía</th>
+                            <th>Entrega / Guía / Lapso</th>
                             <th>Acciones</th>
                         </tr>
                     </thead>
@@ -264,8 +264,8 @@
                         <input type="number" id="formPrice" min="0" step="0.01" required placeholder="Precio">
                     </div>
                     <div class="form-group" id="formStockGroup">
-                        <label for="formStock">Cantidad</label>
-                        <input type="number" id="formStock" min="0" step="1" placeholder="Cantidad disponible">
+                        <label for="formStock"><i class="fa-solid fa-boxes-stacked"></i> Cantidad / Stock disponible</label>
+                        <input type="number" id="formStock" min="1" step="1" required placeholder="Ej: 30 para productos o 5 para vehículos">
                     </div>
                     <button type="submit" class="btn-submit">Ingresar al Inventario</button>
                 </form>
@@ -419,9 +419,11 @@
             </div>
             <div class="orders-search-box">
                 <i class="fa-solid fa-magnifying-glass search-ico"></i>
-                <input type="text" id="orderSearchInput" placeholder="Ingresa tu DNI, correo electrónico o # de compra..." onkeyup="if(event.key==='Enter') buscarMisPedidos()">
+                <input type="text" id="orderSearchInput" placeholder="Ingresa tu DNI, correo electrónico o # de compra..." oninput="buscarMisPedidos()" onkeyup="if(event.key==='Enter') buscarMisPedidos()">
                 <button type="button" class="btn-primary" onclick="buscarMisPedidos()"><i class="fa-solid fa-magnifying-glass"></i> Consultar</button>
             </div>
+            <!-- Banner de identificación del cliente -->
+            <div id="customerGreetingBox" class="customer-greeting-box" style="display: none;"></div>
             <div id="ordersResultsList" class="orders-results-list">
                 <!-- Se llena dinámicamente con los pedidos -->
             </div>

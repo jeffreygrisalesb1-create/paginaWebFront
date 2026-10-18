@@ -105,6 +105,12 @@ function animarContadores() {
    INICIALIZACIÓN
    =========================== */
 document.addEventListener("DOMContentLoaded", async () => {
+    // Asegurar que el modal inicie cerrado y limpiar hash residual si quedó en la URL al recargar
+    document.getElementById('ordersModal')?.classList.remove('active');
+    if (window.location.hash === '#mis-pedidos') {
+        history.replaceState(null, '', window.location.pathname + window.location.search);
+    }
+
     const imagenesCompartidas = await cargarImagenesCompartidas();
     imagenesVehiculos = { ...imagenesCompartidas.vehiculos, ...leerMapaImagenes(CLAVE_IMAGENES_VEHICULOS) };
     imagenesProductos = { ...imagenesCompartidas.productos, ...leerMapaImagenes(CLAVE_IMAGENES_PRODUCTOS) };
@@ -173,6 +179,40 @@ function resumirCondicionVehiculo(item) {
 /* ===========================
    MAPEADORES DE DATOS
    =========================== */
+const CLAVE_STOCK_OVERRIDES = 'inemMotors.stockOverrides.v1';
+
+function leerStockOverrides() {
+    try {
+        const guardados = JSON.parse(localStorage.getItem(CLAVE_STOCK_OVERRIDES) || '{}');
+        return guardados && typeof guardados === 'object' ? guardados : {};
+    } catch {
+        return {};
+    }
+}
+
+function guardarStockOverride(tipo, dbId, nuevoStock) {
+    const mapa = leerStockOverrides();
+    mapa[`${tipo}-${dbId}`] = Math.max(0, Number(nuevoStock));
+    localStorage.setItem(CLAVE_STOCK_OVERRIDES, JSON.stringify(mapa));
+}
+
+function obtenerStockReal(tipo, dbId, stockOriginal) {
+    const mapa = leerStockOverrides();
+    const clave = `${tipo}-${dbId}`;
+    if (mapa[clave] !== undefined) {
+        return Number(mapa[clave]);
+    }
+    if (stockOriginal !== null && stockOriginal !== undefined && stockOriginal !== '' && Number.isFinite(Number(stockOriginal))) {
+        return Number(stockOriginal);
+    }
+    if (tipo === 'product') {
+        // Stock variado para productos y repuestos: entre 18 y 45 unidades según su ID
+        const stocksSemilla = [35, 42, 28, 50, 15, 30, 48, 22, 38, 12, 40, 25, 33, 45, 20];
+        return stocksSemilla[Number(dbId) % stocksSemilla.length];
+    }
+    return 5;
+}
+
 function mapearVehiculo(registro) {
     const vehiculoId = Number(leerCampo(registro, 'Vehiculo_id', 'id'));
     const categoriaId = leerCampo(registro, 'Categoria_id');
@@ -181,7 +221,9 @@ function mapearVehiculo(registro) {
     const recomendacionRegistro = leerCampo(registro, 'Recomendacion', 'Recomendación', 'Accion_recomendada', 'Acción_recomendada');
     const diagnosticoDemo = diagnosticosSimulados[vehiculoId];
     const cantidad = leerCampo(registro, 'Cantidad', 'cantidad');
-    const stock = cantidad === null || cantidad === '' ? null : Number(cantidad);
+    const stockOriginal = cantidad === null || cantidad === '' ? null : Number(cantidad);
+    const stockCalculado = obtenerStockReal('vehicle', vehiculoId, stockOriginal);
+
     return {
         id: `vehiculo-${vehiculoId}`, dbId: vehiculoId,
         name: leerCampo(registro, 'nombre') || 'Sin nombre',
@@ -196,7 +238,7 @@ function mapearVehiculo(registro) {
         recomendacion: recomendacionRegistro || diagnosticoDemo?.recomendacion || '',
         diagnosticoSimulado: !diagnosticoRegistro && Boolean(diagnosticoDemo),
         price: Number(leerCampo(registro, 'precio')) || 0,
-        stock: stock !== null && Number.isFinite(stock) ? stock : null,
+        stock: stockCalculado,
         image: imagenesVehiculos[String(vehiculoId)] || ''
     };
 }
@@ -206,6 +248,9 @@ function mapearProducto(registro) {
     const categoriaId = leerCampo(registro, 'CatPro_id');
     const categoria = categoriasProductos.find(item => Number(leerCampo(item, 'CatPro_id')) === Number(categoriaId));
     const categoryName = leerCampo(categoria, 'nombre') || 'Tipo no informado';
+    const cantidad = leerCampo(registro, 'Cantidad', 'cantidad', 'stock');
+    const stockCalculado = obtenerStockReal('product', productoId, cantidad);
+
     return {
         id: `producto-${productoId}`, dbId: productoId,
         name: leerCampo(registro, 'nombre') || 'Sin nombre',
@@ -213,7 +258,7 @@ function mapearProducto(registro) {
         category: agruparCategoriaProducto(categoryName), categoryName,
         status: categoryName,
         price: Number(leerCampo(registro, 'precio')) || 0,
-        stock: null,
+        stock: stockCalculado,
         image: imagenesProductos[String(productoId)] || ''
     };
 }
@@ -603,18 +648,28 @@ async function cambiarEstadoManual(compraId, nuevoEstado) {
     const envio = enviosRegistrados.find(item => String(leerCampo(item, 'Compra_id')) === String(compraId));
     const envioId = leerCampo(envio, 'Envio_id');
     const transporteId = Number(document.getElementById(`orderCarrier-${compraId}`)?.value || leerCampo(envio, 'Transporte_id') || 1);
+    const lapsoSeleccionado = document.getElementById(`orderTimeframe-${compraId}`)?.value || '';
     const descActual = document.getElementById(`orderDescription-${compraId}`)?.value.trim() || leerCampo(envio, 'Descripcion') || '';
+    const hoyIso = new Date().toISOString().slice(0, 10);
+
+    const mapaActual = leerMapaEstadosPedidos();
+    const guardadoPrevio = mapaActual[String(compraId)] || {};
+    const lapsoFinal = lapsoSeleccionado || guardadoPrevio.lapsoEntrega || '';
+    const fechaEntregaReal = nuevoEstado === 'Entregado' ? (guardadoPrevio.fechaEntregaReal || hoyIso) : guardadoPrevio.fechaEntregaReal;
 
     guardarEstadoPedido(compraId, {
         estado: nuevoEstado,
         trabajadorNombre: leerCampo(empleadoActivo, 'nombre') || 'Trabajador',
         trabajadorId: leerCampo(empleadoActivo, 'Empleado_id'),
         descripcionEnvio: descActual,
-        transportadoraId: transporteId
+        transportadoraId: transporteId,
+        lapsoEntrega: lapsoFinal,
+        fechaEntregaReal: fechaEntregaReal || null
     });
 
     try {
         if (envioId) {
+            const fechaLFinal = nuevoEstado === 'Entregado' ? hoyIso : (leerCampo(envio, 'FechaL') ? String(leerCampo(envio, 'FechaL')).slice(0, 10) : null);
             await solicitarAPI(`envios/${encodeURIComponent(envioId)}`, {
                 method: 'PUT',
                 body: JSON.stringify({
@@ -622,10 +677,10 @@ async function cambiarEstadoManual(compraId, nuevoEstado) {
                     CiudadD_id: leerCampo(envio, 'CiudadD_id'),
                     Transporte_id: transporteId,
                     FechaE: String(leerCampo(envio, 'FechaE') || '').slice(0, 10),
-                    FechaL: leerCampo(envio, 'FechaL') ? String(leerCampo(envio, 'FechaL')).slice(0, 10) : null,
+                    FechaL: fechaLFinal,
                     Direccion: leerCampo(envio, 'Direccion'),
                     Compra_id: compraId,
-                    Descripcion: `${nuevoEstado}: ${descActual}`
+                    Descripcion: `${nuevoEstado}: ${descActual}${lapsoFinal ? ` [Lapso: ${lapsoFinal}]` : ''}`
                 })
             }).catch(() => {});
         }
@@ -745,14 +800,36 @@ function renderizarComprasPendientes() {
 
     tbody.innerHTML = filtrados.map(entry => {
         const { compra, envio, compraId, estado, infoEstado } = entry;
-        const lineas = [
-            ...detallesProductosCompra.filter(d => String(leerCampo(d, 'Compra_id')) === compraId).map(d => itemsPorId.get(String(leerCampo(d, 'Producto_id')))),
-            ...detallesVehiculosCompra.filter(d => String(leerCampo(d, 'Compra_id')) === compraId).map(d => itemsPorId.get(String(leerCampo(d, 'Vehiculo_id'))))
-        ].filter(Boolean);
+        
+        // Resolver artículos exactos
+        let lineas = [];
+        if (Array.isArray(infoEstado.articulosDetallados) && infoEstado.articulosDetallados.length > 0) {
+            lineas = infoEstado.articulosDetallados;
+        } else {
+            const vehiculosMap = new Map(baseDeDatos.filter(i => i.category === 'Vehículos').map(i => [String(i.dbId), i]));
+            const productosMap = new Map(baseDeDatos.filter(i => i.category !== 'Vehículos').map(i => [String(i.dbId), i]));
+
+            const lineasVehiculos = detallesVehiculosCompra
+                .filter(d => String(leerCampo(d, 'Compra_id')) === compraId)
+                .map(d => vehiculosMap.get(String(leerCampo(d, 'Vehiculo_id'))))
+                .filter(Boolean);
+
+            const lineasProductos = detallesProductosCompra
+                .filter(d => String(leerCampo(d, 'Compra_id')) === compraId)
+                .map(d => productosMap.get(String(leerCampo(d, 'Producto_id'))))
+                .filter(Boolean);
+
+            lineas = [...lineasVehiculos, ...lineasProductos];
+
+            if (!lineas.length && infoEstado.articulos) {
+                lineas = [{ name: infoEstado.articulos, price: infoEstado.total || 0 }];
+            }
+        }
+
         const cliente = clientesRegistrados.find(item => String(leerCampo(item, 'Cliente_id')) === String(leerCampo(compra, 'Cliente_id')));
         const transporteId = leerCampo(envio, 'Transporte_id');
         const total = lineas.reduce((sum, item) => sum + Number(item.price || 0), 0);
-        const fecha = String(leerCampo(compra, 'fecha') || '').slice(0, 10);
+        const fecha = String(leerCampo(compra, 'fecha') || infoEstado.fecha || '').slice(0, 10);
 
         const badgeClass = {
             'Pendiente': 'badge-pending',
@@ -789,11 +866,22 @@ function renderizarComprasPendientes() {
                 ${esRechazado ? `
                     <span class="rejected-badge-text"><i class="fa-solid fa-ban"></i> Motivo: ${esc(motivo || 'Rechazado')}</span>
                 ` : `
-                    <select class="order-carrier-select" id="orderCarrier-${esc(compraId)}" ${empleadoActivo ? '' : 'disabled'}>
-                        <option value="">Transportadora...</option>
-                        ${transportadorasRegistradas.map(t => { const id = leerCampo(t, 'Transporte_id'); return `<option value="${esc(id)}" ${String(id) === String(transporteId) ? 'selected' : ''}>${esc(leerCampo(t, 'nombre'))}</option>`; }).join('')}
-                    </select>
-                    <input class="order-description-input" id="orderDescription-${esc(compraId)}" type="text" maxlength="255" value="${esc(leerCampo(envio, 'Descripcion') || '')}" placeholder="Guía / Nota de entrega" ${empleadoActivo ? '' : 'disabled'}>
+                    <div class="worker-delivery-controls">
+                        <select class="order-carrier-select" id="orderCarrier-${esc(compraId)}" ${empleadoActivo ? '' : 'disabled'} title="Seleccionar transportadora">
+                            <option value="">Transportadora...</option>
+                            ${transportadorasRegistradas.map(t => { const id = leerCampo(t, 'Transporte_id'); return `<option value="${esc(id)}" ${String(id) === String(transporteId) ? 'selected' : ''}>${esc(leerCampo(t, 'nombre'))}</option>`; }).join('')}
+                        </select>
+                        <select class="order-timeframe-select" id="orderTimeframe-${esc(compraId)}" ${empleadoActivo ? '' : 'disabled'} title="Lapso estimado de entrega">
+                            <option value="">Lapso estimado de entrega...</option>
+                            <option value="Inmediata (24 a 48 horas)" ${infoEstado.lapsoEntrega === 'Inmediata (24 a 48 horas)' ? 'selected' : ''}>⚡ 24 a 48 horas</option>
+                            <option value="3 a 5 días hábiles" ${infoEstado.lapsoEntrega === '3 a 5 días hábiles' ? 'selected' : ''}>📦 3 a 5 días hábiles</option>
+                            <option value="5 a 10 días hábiles" ${infoEstado.lapsoEntrega === '5 a 10 días hábiles' ? 'selected' : ''}>🚚 5 a 10 días hábiles</option>
+                            <option value="10 a 15 días hábiles" ${infoEstado.lapsoEntrega === '10 a 15 días hábiles' ? 'selected' : ''}>🗓️ 10 a 15 días hábiles</option>
+                            <option value="15 a 20 días hábiles" ${infoEstado.lapsoEntrega === '15 a 20 días hábiles' ? 'selected' : ''}>🚛 15 a 20 días hábiles</option>
+                            <option value="20 a 30 días hábiles" ${infoEstado.lapsoEntrega === '20 a 30 días hábiles' ? 'selected' : ''}>🚢 20 a 30 días (Especial/Importación)</option>
+                        </select>
+                        <input class="order-description-input" id="orderDescription-${esc(compraId)}" type="text" maxlength="255" value="${esc(leerCampo(envio, 'Descripcion') || '')}" placeholder="Guía / Nota de entrega" ${empleadoActivo ? '' : 'disabled'}>
+                    </div>
                 `}
             </td>
             <td>
@@ -839,29 +927,67 @@ function abrirModalMisPedidos() {
 
 function cerrarModalMisPedidos() {
     document.getElementById('ordersModal')?.classList.remove('active');
+    if (window.location.hash === '#mis-pedidos') {
+        history.replaceState(null, '', window.location.pathname + window.location.search);
+    }
 }
 
 function buscarMisPedidos() {
     const query = document.getElementById('orderSearchInput')?.value.trim().toLowerCase() || '';
     const contenedor = document.getElementById('ordersResultsList');
+    const greetingBox = document.getElementById('customerGreetingBox');
     if (!contenedor) return;
 
     if (!comprasRegistradas.length) {
+        if (greetingBox) greetingBox.style.display = 'none';
         contenedor.innerHTML = '<div class="empty-orders-state"><i class="fa-solid fa-box-archive"></i><p>No hay pedidos registrados en el sistema actualmente.</p></div>';
         return;
     }
 
     const itemsPorId = new Map(baseDeDatos.map(item => [String(item.dbId), item]));
 
+    // Buscar si el query coincide con un cliente registrado (por DNI, correo o nombre)
+    let clienteCoincidente = null;
+    if (query) {
+        clienteCoincidente = clientesRegistrados.find(c => {
+            const dni = String(leerCampo(c, 'dni') || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+            const qClean = query.replace(/[^a-z0-9]/g, '');
+            const correo = String(leerCampo(c, 'correo') || '').toLowerCase();
+            const nombre = String(leerCampo(c, 'nombre') || '').toLowerCase();
+            return (dni && qClean && (dni === qClean || dni.includes(qClean))) || correo.includes(query) || nombre.includes(query);
+        });
+    }
+
+    // Mostrar banner con el nombre del cliente encontrado
+    if (greetingBox) {
+        if (clienteCoincidente && query) {
+            const nombreCli = leerCampo(clienteCoincidente, 'nombre') || 'Cliente';
+            const dniCli = leerCampo(clienteCoincidente, 'dni') || '';
+            const correoCli = leerCampo(clienteCoincidente, 'correo') || '';
+            greetingBox.style.display = 'flex';
+            greetingBox.innerHTML = `
+                <div class="customer-greeting-avatar"><i class="fa-solid fa-user-check"></i></div>
+                <div class="customer-greeting-info">
+                    <h3>¡Hola, ${esc(nombreCli)}!</h3>
+                    <p><i class="fa-solid fa-id-card"></i> DNI: <strong>${esc(dniCli || 'Registrado')}</strong> ${correoCli ? ` · <i class="fa-solid fa-envelope"></i> ${esc(correoCli)}` : ''}</p>
+                </div>
+            `;
+        } else {
+            greetingBox.style.display = 'none';
+        }
+    }
+
     const filtrados = comprasRegistradas.filter(compra => {
         const compraId = String(leerCampo(compra, 'Compra_id') || '');
         const cliente = clientesRegistrados.find(c => String(leerCampo(c, 'Cliente_id')) === String(leerCampo(compra, 'Cliente_id')));
         const dni = String(leerCampo(cliente, 'dni') || '').toLowerCase();
+        const dniClean = dni.replace(/[^a-z0-9]/g, '');
+        const qClean = query.replace(/[^a-z0-9]/g, '');
         const correo = String(leerCampo(cliente, 'correo') || '').toLowerCase();
         const nombre = String(leerCampo(cliente, 'nombre') || '').toLowerCase();
 
         if (!query) return true;
-        return compraId === query || compraId.includes(query) || dni.includes(query) || correo.includes(query) || nombre.includes(query);
+        return compraId === query || compraId.includes(query) || (dniClean && qClean && dniClean.includes(qClean)) || correo.includes(query) || nombre.includes(query);
     });
 
     if (!filtrados.length) {
@@ -883,10 +1009,42 @@ function buscarMisPedidos() {
         const infoEstado = obtenerEstadoPedido(compraId, compra, envio);
         const estado = infoEstado.estado || 'Pendiente';
 
-        const lineasVehiculos = detallesVehiculosCompra.filter(d => String(leerCampo(d, 'Compra_id')) === compraId).map(d => itemsPorId.get(String(leerCampo(d, 'Vehiculo_id')))).filter(Boolean);
-        const lineasProductos = detallesProductosCompra.filter(d => String(leerCampo(d, 'Compra_id')) === compraId).map(d => itemsPorId.get(String(leerCampo(d, 'Producto_id')))).filter(Boolean);
-        const todasLineas = [...lineasVehiculos, ...lineasProductos];
+        // Obtener artículos exactos: si el pedido tiene articulosDetallados registrados en la compra, se usan con fidelidad total
+        let todasLineas = [];
+        if (Array.isArray(infoEstado.articulosDetallados) && infoEstado.articulosDetallados.length > 0) {
+            todasLineas = infoEstado.articulosDetallados;
+        } else {
+            // Resolver separando vehículos de productos para evitar colisiones de IDs numéricos idénticos
+            const vehiculosMap = new Map(baseDeDatos.filter(i => i.category === 'Vehículos').map(i => [String(i.dbId), i]));
+            const productosMap = new Map(baseDeDatos.filter(i => i.category !== 'Vehículos').map(i => [String(i.dbId), i]));
+
+            const lineasVehiculos = detallesVehiculosCompra
+                .filter(d => String(leerCampo(d, 'Compra_id')) === compraId)
+                .map(d => vehiculosMap.get(String(leerCampo(d, 'Vehiculo_id'))))
+                .filter(Boolean);
+
+            const lineasProductos = detallesProductosCompra
+                .filter(d => String(leerCampo(d, 'Compra_id')) === compraId)
+                .map(d => productosMap.get(String(leerCampo(d, 'Producto_id'))))
+                .filter(Boolean);
+
+            todasLineas = [...lineasVehiculos, ...lineasProductos];
+
+            // Si aún no se encuentran detalles pero se guardó un resumen de texto al comprar
+            if (!todasLineas.length && infoEstado.articulos) {
+                todasLineas = [{
+                    name: infoEstado.articulos,
+                    category: 'Artículos',
+                    categoryName: 'Adquirido en pedido',
+                    price: infoEstado.total || 0
+                }];
+            }
+        }
+
         const total = todasLineas.reduce((sum, item) => sum + Number(item.price || 0), 0);
+        const fechaCompra = String(leerCampo(compra, 'fecha') || infoEstado.fecha || '').slice(0, 10);
+        const fechaEntrega = infoEstado.fechaEntregaReal || (leerCampo(envio, 'FechaL') ? String(leerCampo(envio, 'FechaL')).slice(0, 10) : null);
+        const lapsoEstimado = infoEstado.lapsoEntrega || '';
 
         const estadoConfig = {
             'Pendiente': { badge: 'badge-pending', icon: 'fa-clock', label: '🟡 Pendiente de revisión', step: 1 },
@@ -904,11 +1062,31 @@ function buscarMisPedidos() {
                 <div class="client-order-header">
                     <div>
                         <span class="client-order-id"><i class="fa-solid fa-receipt"></i> Pedido #${esc(compraId)}</span>
-                        <span class="client-order-date"><i class="fa-regular fa-calendar"></i> ${esc(String(leerCampo(compra, 'fecha') || '').slice(0, 10))}</span>
+                        <span class="client-order-customer" style="color:#94a3b8;font-size:0.9rem;margin-right:10px;"><i class="fa-solid fa-user"></i> <strong>${esc(leerCampo(cliente, 'nombre') || 'Cliente')}</strong></span>
                     </div>
                     <span class="order-status-badge ${estadoConfig.badge}">
                         <i class="fa-solid ${estadoConfig.icon}"></i> ${estadoConfig.label}
                     </span>
+                </div>
+
+                <!-- Resumen de fechas de compra, lapso y entrega -->
+                <div class="client-order-dates-grid">
+                    <div class="order-date-pill">
+                        <i class="fa-regular fa-calendar-check"></i>
+                        <span>Fecha de compra: <strong>${esc(fechaCompra || 'No registrada')}</strong></span>
+                    </div>
+                    ${lapsoEstimado && estado !== 'Entregado' && !esRechazado ? `
+                        <div class="order-timeframe-badge">
+                            <i class="fa-solid fa-stopwatch"></i>
+                            <span>Lapso estimado: <strong>${esc(lapsoEstimado)}</strong></span>
+                        </div>
+                    ` : ''}
+                    ${estado === 'Entregado' && fechaEntrega ? `
+                        <div class="order-date-pill delivered-pill">
+                            <i class="fa-solid fa-box-open"></i>
+                            <span>Fecha de entrega: <strong>${esc(fechaEntrega)}</strong></span>
+                        </div>
+                    ` : ''}
                 </div>
 
                 ${!esRechazado ? `
@@ -958,7 +1136,8 @@ function buscarMisPedidos() {
                     <div class="client-order-summary-box">
                         <div class="summary-line"><span>Destino:</span><strong>${esc(leerCampo(envio, 'Direccion') || 'No informado')}</strong></div>
                         <div class="summary-line"><span>Transportadora:</span><strong>${esc(leerCampo(transportadora, 'nombre') || 'Por confirmar')}</strong></div>
-                        ${leerCampo(envio, 'Descripcion') && !esRechazado ? `<div class="summary-line note"><span>Nota de entrega:</span><em>"${esc(leerCampo(envio, 'Descripcion'))}"</em></div>` : ''}
+                        ${lapsoEstimado ? `<div class="summary-line"><span>Tiempo de entrega:</span><strong style="color:#fbbf24;">${esc(lapsoEstimado)}</strong></div>` : ''}
+                        ${leerCampo(envio, 'Descripcion') && !esRechazado ? `<div class="summary-line note"><span>Nota / Guía:</span><em>"${esc(leerCampo(envio, 'Descripcion'))}"</em></div>` : ''}
                         <div class="summary-line total"><span>Total:</span><strong>$${total.toLocaleString('es-CO')}</strong></div>
                     </div>
                 </div>
@@ -968,11 +1147,10 @@ function buscarMisPedidos() {
 }
 
 window.addEventListener('hashchange', () => {
-    if (window.location.hash === '#mis-pedidos') abrirModalMisPedidos();
+    if (window.location.hash === '#mis-pedidos') {
+        abrirModalMisPedidos();
+    }
 });
-if (window.location.hash === '#mis-pedidos') {
-    setTimeout(abrirModalMisPedidos, 400);
-}
 
 /* ===========================
    MODAL DE DETALLES
@@ -982,8 +1160,8 @@ function abrirDetalle(id) {
     if (!item) return;
     const resumen = item.category === 'Vehículos' ? resumirCondicionVehiculo(item) : null;
     const especificaciones = item.category === 'Vehículos'
-        ? [['Categoría', item.categoryName], ['Marca', item.brand], ['Modelo', item.model], ['Placa', item.plate], ['Color', item.color], ['Cantidad', item.stock]]
-        : [['Tipo', item.categoryName], ['Existencias', 'No informadas']];
+        ? [['Categoría', item.categoryName], ['Marca', item.brand], ['Modelo', item.model], ['Placa', item.plate], ['Color', item.color], ['Disponibles en Stock', `${item.stock} unidades`]]
+        : [['Tipo', item.categoryName], ['Disponibles en Stock', `${item.stock} unidades`]];
     const imagenDetalle = item.image ? `<img src="${esc(item.image)}" alt="${esc(item.name)}" data-detail-image>` : '';
     document.getElementById('vehicleDetailBody').innerHTML = `
         <button class="vehicle-detail-close" onclick="cerrarDetalle()" aria-label="Cerrar"><i class="fa-solid fa-xmark"></i></button>
@@ -1078,7 +1256,8 @@ function actualizarFormularioCategoria() {
     const grupo = formCatEl.value;
     const esVehiculo = grupo === 'Vehículos';
     const select = document.getElementById('formDbCategory');
-    const gruposVehiculo = ['formBrandGroup', 'formModelGroup', 'formPlateGroup', 'formColorGroup', 'formStockGroup'];
+    // Campos exclusivos de vehículos (marca, modelo, placa, color)
+    const gruposVehiculo = ['formBrandGroup', 'formModelGroup', 'formPlateGroup', 'formColorGroup'];
     gruposVehiculo.forEach(id => {
         const contenedor = document.getElementById(id);
         if (!contenedor) return;
@@ -1086,6 +1265,18 @@ function actualizarFormularioCategoria() {
         const campo = contenedor.querySelector('input');
         if (campo) campo.required = esVehiculo;
     });
+
+    // El campo de stock/cantidad aplica tanto para vehículos como para productos y repuestos
+    const contenedorStock = document.getElementById('formStockGroup');
+    if (contenedorStock) {
+        contenedorStock.hidden = false;
+        const inputStock = contenedorStock.querySelector('input');
+        if (inputStock) {
+            inputStock.required = true;
+            inputStock.placeholder = esVehiculo ? 'Cantidad de vehículos (ej: 5)' : 'Cantidad en inventario (ej: 40)';
+        }
+    }
+
     const categorias = esVehiculo
         ? categoriasVehiculos.map(item => ({ id: leerCampo(item, 'Categoria_id'), nombre: leerCampo(item, 'nombre') }))
         : categoriasProductos
@@ -1179,17 +1370,22 @@ async function agregarNuevoItem(e) {
     const clasificacion = Number(document.getElementById('formDbCategory').value);
     const nombre = document.getElementById('formName').value.trim();
     const precio = Number(document.getElementById('formPrice').value);
+    const cantidadIngresada = Number(document.getElementById('formStock').value) || 0;
     const esVehiculo = grupo === 'Vehículos';
     const recurso = esVehiculo ? 'vehiculos' : 'productos';
     const registro = esVehiculo
-        ? { nombre, Marca: document.getElementById('formBrand').value.trim(), Modelo: document.getElementById('formModel').value.trim(), Placa: document.getElementById('formPlate').value.trim(), Color: document.getElementById('formColor').value.trim(), Cantidad: Number(document.getElementById('formStock').value), Categoria_id: clasificacion, precio }
-        : { nombre, precio, CatPro_id: clasificacion };
+        ? { nombre, Marca: document.getElementById('formBrand').value.trim(), Modelo: document.getElementById('formModel').value.trim(), Placa: document.getElementById('formPlate').value.trim(), Color: document.getElementById('formColor').value.trim(), Cantidad: cantidadIngresada, Categoria_id: clasificacion, precio }
+        : { nombre, precio, CatPro_id: clasificacion, Cantidad: cantidadIngresada };
     try {
-        await solicitarAPI(recurso, { method: 'POST', body: JSON.stringify(registro) });
+        const respuesta = await solicitarAPI(recurso, { method: 'POST', body: JSON.stringify(registro) });
+        const nuevoId = respuesta?.id || respuesta?.Producto_id || respuesta?.Vehiculo_id;
+        if (nuevoId) {
+            guardarStockOverride(esVehiculo ? 'vehicle' : 'product', nuevoId, cantidadIngresada);
+        }
         document.getElementById('newItemForm').reset();
         actualizarFormularioCategoria();
         await cargarDatosReales();
-        mostrarToast(`Registro '${nombre}' creado exitosamente.`, 'success');
+        mostrarToast(`Registro '${nombre}' creado con ${cantidadIngresada} unidades disponibles.`, 'success');
     } catch (error) {
         mostrarToast(`No fue posible guardar el registro: ${error.message}`, 'error');
     }

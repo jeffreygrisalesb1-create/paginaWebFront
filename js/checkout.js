@@ -48,6 +48,7 @@ async function cargarFormulario() {
         state.cities = Array.isArray(cities) ? cities : [];
         state.customers = Array.isArray(customers) ? customers : [];
         state.carriers = Array.isArray(carriers) ? carriers : [];
+        state.selectedProductIds = [];
         llenarSelectorCategorias('vehicleCategory', state.items.filter(item => item.type === 'vehicle'));
         llenarSelectorCategorias('productCategory', state.items.filter(item => item.type === 'product'));
         llenarPaises();
@@ -64,12 +65,45 @@ async function cargarFormulario() {
     }
 }
 
+const CLAVE_STOCK_OVERRIDES = 'inemMotors.stockOverrides.v1';
+
+function leerStockOverrides() {
+    try {
+        const guardados = JSON.parse(localStorage.getItem(CLAVE_STOCK_OVERRIDES) || '{}');
+        return guardados && typeof guardados === 'object' ? guardados : {};
+    } catch {
+        return {};
+    }
+}
+
+function obtenerStockReal(type, id, count) {
+    const mapa = leerStockOverrides();
+    const clave = `${type}-${id}`;
+    if (mapa[clave] !== undefined) return Number(mapa[clave]);
+    if (count !== null && count !== '' && Number.isFinite(Number(count))) return Number(count);
+    if (type === 'product') {
+        const stocksSemilla = [35, 42, 28, 50, 15, 30, 48, 22, 38, 12, 40, 25, 33, 45, 20];
+        return stocksSemilla[Number(id) % stocksSemilla.length];
+    }
+    return 5;
+}
+
+function deducirStockLocal(item) {
+    const mapa = leerStockOverrides();
+    const clave = `${item.type}-${item.dbId}`;
+    const stockActual = item.stock !== null && Number.isFinite(Number(item.stock)) ? Number(item.stock) : 5;
+    const nuevoStock = Math.max(0, stockActual - 1);
+    mapa[clave] = nuevoStock;
+    localStorage.setItem(CLAVE_STOCK_OVERRIDES, JSON.stringify(mapa));
+}
+
 function mapearArticulo(record, categories, type) {
     const id = Number(fieldValue(record, type === 'vehicle' ? 'Vehiculo_id' : 'Producto_id') ?? fieldValue(record, 'id'));
     const categoryId = fieldValue(record, type === 'vehicle' ? 'Categoria_id' : 'CatPro_id');
     const category = categories.find(item => Number(fieldValue(item, type === 'vehicle' ? 'Categoria_id' : 'CatPro_id')) === Number(categoryId));
     const categoryName = fieldValue(category, 'nombre') || 'Tipo no informado';
-    const count = fieldValue(record, 'Cantidad');
+    const count = fieldValue(record, 'Cantidad', 'stock');
+    const stockCalculado = obtenerStockReal(type, id, count);
     return {
         id: `${type === 'vehicle' ? 'vehiculo' : 'producto'}-${id}`,
         dbId: id,
@@ -77,7 +111,7 @@ function mapearArticulo(record, categories, type) {
         name: fieldValue(record, 'nombre') || 'Sin nombre',
         categoryName,
         price: Number(fieldValue(record, 'precio')) || 0,
-        stock: count === null || count === '' ? null : Number(count)
+        stock: stockCalculado
     };
 }
 
@@ -231,6 +265,18 @@ async function finalizarCompra(event) {
                     ? { Compra_id: purchaseId, Vehiculo_id: item.dbId }
                     : { Compra_id: purchaseId, Producto_id: item.dbId })
             });
+
+            // Reducir stock automáticamente de inmediato
+            deducirStockLocal(item);
+
+            // Intentar actualizar también en la base de datos REST si el endpoint soporta PUT/PATCH de cantidad
+            if (item.type === 'vehicle') {
+                const nuevoStock = Math.max(0, (item.stock || 1) - 1);
+                solicitarAPI(`vehiculos/${item.dbId}`, {
+                    method: 'PUT',
+                    body: JSON.stringify({ Cantidad: nuevoStock })
+                }).catch(() => {});
+            }
         }
 
         const city = state.cities.find(entry => Number(fieldValue(entry, 'Ciudad_id')) === cityId);
@@ -262,6 +308,15 @@ async function finalizarCompra(event) {
                 clienteDni: customer.dni,
                 clienteCorreo: customer.correo,
                 articulos: selectedItems.map(i => i.name).join(', '),
+                articulosDetallados: selectedItems.map(i => ({
+                    id: i.id,
+                    dbId: i.dbId,
+                    type: i.type,
+                    name: i.name,
+                    price: i.price,
+                    category: i.type === 'vehicle' ? 'Vehículos' : 'Productos',
+                    categoryName: i.categoryName
+                })),
                 total: selectedItems.reduce((sum, item) => sum + item.price, 0),
                 fecha: new Date().toISOString().slice(0, 10),
                 transportadora: fieldValue(carrier, 'nombre'),
